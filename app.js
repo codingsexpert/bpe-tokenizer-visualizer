@@ -209,8 +209,8 @@ class JSBPETokenizer {
 const tokenizer = new JSBPETokenizer();
 
 const SAMPLES = {
-    multilingual: `Hello world! Don't worry, BPE tokenization is 100% working. नमस्ते दुनिया! Tokenizer Studio is ready.`,
-    code: `def bpe_encode(text):\n    tokens = tokenizer.encode(text)\n    return [t.id for t in tokens]`,
+    multilingual: `Tokenizers process text into subword units for LLMs. नमस्ते दुनिया!`,
+    code: `def tokenize(prompt):\n    return tokenizer.encode(prompt)`,
     classic: `low low low low low lower lower newest newest newest`
 };
 
@@ -276,8 +276,8 @@ document.addEventListener('DOMContentLoaded', () => {
         runTraining();
     });
 
-    // Input Listeners
-    promptInput.value = SAMPLES.multilingual;
+    // Default: Clean Initial State
+    promptInput.value = "Tokenizers process text into subword units for LLMs.";
     corpusInput.value = SAMPLES.multilingual;
 
     promptInput.addEventListener('input', runTokenization);
