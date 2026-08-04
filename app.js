@@ -1,12 +1,12 @@
 // =====================================================================
-//  Byte-Level BPE Tokenizer - Interactive Web Engine (GPT-2/4 Style)
+//  Byte-Level BPE Tokenizer - Clean Minimal Web Engine
 // =====================================================================
 
-// Color palette generator for token pills
-const PALETTE = [
-    '#fecaca', '#fef08a', '#bbf7d0', '#bfdbfe', '#e9d5ff',
-    '#fed7aa', '#ddd6fe', '#fbcfe8', '#a7f3d0', '#99f6e4',
-    '#bae6fd', '#c7d2fe', '#fde68a', '#d9f99d', '#fae8ff'
+// Refined subtle pastel color palette for tokens
+const PASTEL_PALETTE = [
+    '#fef2f2', '#fefce8', '#f0fdf4', '#eff6ff', '#faf5ff',
+    '#fff7ed', '#f5f3ff', '#fdf2f8', '#ecfdf5', '#f0fdfa',
+    '#e0f2fe', '#e0e7ff', '#fef9c3', '#ecfccb', '#fae8ff'
 ];
 
 function stringToColor(str) {
@@ -14,8 +14,8 @@ function stringToColor(str) {
     for (let i = 0; i < str.length; i++) {
         hash = str.charCodeAt(i) + ((hash << 5) - hash);
     }
-    const index = Math.abs(hash) % PALETTE.length;
-    return PALETTE[index];
+    const index = Math.abs(hash) % PASTEL_PALETTE.length;
+    return PASTEL_PALETTE[index];
 }
 
 // Byte to Unicode mapping (GPT-2 style)
@@ -44,43 +44,38 @@ function getBytesToUnicode() {
     return { byteToUnicode, unicodeToByte };
 }
 
-const { byteToUnicode, unicodeToByte } = getBytesToUnicode();
+const { byteToUnicode } = getBytesToUnicode();
 
 class JSBPETokenizer {
     constructor() {
-        self.vocab = {};            // string token -> ID
-        self.idToVocab = {};       // ID -> string token
-        self.merges = [];          // list of [p1, p2]
-        self.mergeRanks = {};      // "p1|p2" -> rank
-        self.specialTokens = {};   // str -> ID
-        self.inverseSpecial = {};  // ID -> str
-        self.reset();
+        this.vocab = {};
+        this.idToVocab = {};
+        this.merges = [];
+        this.mergeRanks = {};
+        this.reset();
     }
 
     reset() {
-        self.vocab = {};
-        self.idToVocab = {};
-        self.merges = [];
-        self.mergeRanks = {};
+        this.vocab = {};
+        this.idToVocab = {};
+        this.merges = [];
+        this.mergeRanks = {};
 
-        // Base 256 single bytes
         for (let b = 0; b < 256; b++) {
             const ch = String.fromCharCode(b);
-            self.vocab[ch] = b;
-            self.idToVocab[b] = ch;
+            this.vocab[ch] = b;
+            this.idToVocab[b] = ch;
         }
     }
 
     train(text, targetVocabSize) {
-        self.reset();
+        this.reset();
         const numMerges = targetVocabSize - 256;
         if (numMerges <= 0) return [];
 
-        // Pre-tokenize using regex
         const regex = /'s|'t|'re|'ve|'m|'ll|'d| ?\w+| ?[^\s\w]+|\s+(?!\S)|\s+/gu;
         const chunks = text.match(regex) || [text];
 
-        // Convert chunks to word byte tokens
         const wordFreq = new Map();
         const encoder = new TextEncoder();
 
@@ -120,20 +115,18 @@ class JSBPETokenizer {
             const [p1, p2] = bestPairKey.split('\0');
             const merged = p1 + p2;
 
-            self.vocab[merged] = nextId;
-            self.idToVocab[nextId] = merged;
-            self.merges.push([p1, p2]);
-            self.mergeRanks[p1 + '|' + p2] = iter;
+            this.vocab[merged] = nextId;
+            this.idToVocab[nextId] = merged;
+            this.merges.push([p1, p2]);
+            this.mergeRanks[p1 + '|' + p2] = iter;
             nextId++;
 
-            // Readable print strings
             const p1Str = Array.from(p1).map(c => byteToUnicode[c.charCodeAt(0)] || c).join('');
             const p2Str = Array.from(p2).map(c => byteToUnicode[c.charCodeAt(0)] || c).join('');
             const mStr = Array.from(merged).map(c => byteToUnicode[c.charCodeAt(0)] || c).join('');
 
             mergeLogs.push({ iter: iter + 1, p1: p1Str, p2: p2Str, merged: mStr, count: bestCount });
 
-            // Apply merge
             const newWordFreq = new Map();
             for (const [key, freq] of wordFreq.entries()) {
                 const tokens = key.split('\0');
@@ -168,8 +161,8 @@ class JSBPETokenizer {
 
             for (let i = 0; i < parts.length - 1; i++) {
                 const key = parts[i] + '|' + parts[i + 1];
-                if (key in self.mergeRanks) {
-                    const rank = self.mergeRanks[key];
+                if (key in this.mergeRanks) {
+                    const rank = this.mergeRanks[key];
                     if (rank < minRank) {
                         minRank = rank;
                         bestIdx = i;
@@ -184,7 +177,7 @@ class JSBPETokenizer {
         }
 
         return parts.map(p => ({
-            id: self.vocab[p] !== undefined ? self.vocab[p] : 0,
+            id: this.vocab[p] !== undefined ? this.vocab[p] : 0,
             tokenStr: p,
             displayStr: Array.from(p).map(c => byteToUnicode[c.charCodeAt(0)] || c).join('')
         }));
@@ -198,31 +191,19 @@ class JSBPETokenizer {
 
         for (const chunk of chunks) {
             const bytes = Array.from(encoder.encode(chunk));
-            tokens = tokens.concat(self.encodeChunk(bytes));
+            tokens = tokens.concat(this.encodeChunk(bytes));
         }
         return tokens;
     }
-
-    decode(tokens) {
-        const bytes = [];
-        for (const tok of tokens) {
-            const str = self.idToVocab[tok.id] || '';
-            for (let i = 0; i < str.length; i++) {
-                bytes.push(str.charCodeAt(i));
-            }
-        }
-        const decoder = new TextDecoder('utf-8', { fatal: false });
-        return decoder.decode(new Uint8Array(bytes));
-    }
 }
 
-// Global UI Application Controller
+// Controller
 const tokenizer = new JSBPETokenizer();
 
 const PRESETS = {
     multilingual: `Hello world! Don't worry, BPE tokenization is 100% working. नमस्ते दुनिया! Python BPE tokenizer is super fast and clean. low lower lowest newest newer.`,
     classic: `low low low low low lower lower newest newest newest`,
-    emojis: `AI Models 🤖 & Emojis 🎉 rock! function tokenize(x) { return x * 42; } नमस्ते!`
+    code: `function bpeTokenize(text) { return text.split('').map(c => c.charCodeAt(0)); }`
 };
 
 // DOM Elements
@@ -232,33 +213,27 @@ const maxMergesEl = document.getElementById('max-merges');
 const btnTrain = document.getElementById('btn-train');
 const mergesListEl = document.getElementById('merges-list');
 const mergesCountEl = document.getElementById('merges-count');
-const trainSpinner = document.getElementById('train-spinner');
 
 const testTextEl = document.getElementById('test-text');
 const tokenPillsEl = document.getElementById('token-pills');
 const tokenIdsOutputEl = document.getElementById('token-ids-output');
-const decodedOutputEl = document.getElementById('decoded-output');
 const showIdsToggle = document.getElementById('show-ids-toggle');
 const btnCopyIds = document.getElementById('btn-copy-ids');
 
 const statCharsEl = document.getElementById('stat-chars');
 const statTokensEl = document.getElementById('stat-tokens');
 const statRatioEl = document.getElementById('stat-ratio');
-const statVocabEl = document.getElementById('stat-vocab');
 
 const vocabTableBody = document.getElementById('vocab-table-body');
 const vocabSearchEl = document.getElementById('vocab-search');
 
-// Event Listeners Setup
 document.addEventListener('DOMContentLoaded', () => {
-    // Initial Preset
     trainTextEl.value = PRESETS.multilingual;
     testTextEl.value = "Hello world! Don't worry, नमस्ते दुनिया!";
 
-    // Preset Buttons
-    document.querySelectorAll('.preset-btn').forEach(btn => {
+    document.querySelectorAll('.preset-tab').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.preset-tab').forEach(b => b.classList.remove('active'));
             e.target.classList.add('active');
             const key = e.target.dataset.preset;
             trainTextEl.value = PRESETS[key];
@@ -278,43 +253,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
     btnCopyIds.addEventListener('click', () => {
         navigator.clipboard.writeText(tokenIdsOutputEl.innerText);
-        btnCopyIds.innerText = "✓ Copied!";
-        setTimeout(() => btnCopyIds.innerText = "📋 Copy", 1500);
+        btnCopyIds.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Copied`;
+        setTimeout(() => {
+            btnCopyIds.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy IDs`;
+        }, 1500);
     });
 
-    // Initial Training & Run
     maxMergesEl.value = parseInt(targetVocabEl.value) - 256;
     runTraining();
 });
 
 function runTraining() {
-    trainSpinner.classList.remove('hidden');
+    const text = trainTextEl.value;
+    const targetVocab = parseInt(targetVocabEl.value) || 300;
+    const mergeLogs = tokenizer.train(text, targetVocab);
     
-    setTimeout(() => {
-        const text = trainTextEl.value;
-        const targetVocab = parseInt(targetVocabEl.value) || 300;
-        
-        const mergeLogs = tokenizer.train(text, targetVocab);
-        
-        renderMerges(mergeLogs);
-        renderVocabTable();
-        runTokenization();
-        
-        trainSpinner.classList.add('hidden');
-    }, 50);
+    renderMerges(mergeLogs);
+    renderVocabTable();
+    runTokenization();
 }
 
 function renderMerges(mergeLogs) {
     mergesCountEl.innerText = mergeLogs.length;
     if (mergeLogs.length === 0) {
-        mergesListEl.innerHTML = `<div class="empty-state">No merges performed.</div>`;
+        mergesListEl.innerHTML = `<span class="placeholder-text">No merges learned.</span>`;
         return;
     }
 
     mergesListEl.innerHTML = mergeLogs.map(log => `
-        <div class="merge-item">
-            <span>#${log.iter}: <span class="merge-pair">('${log.p1}', '${log.p2}')</span></span>
-            <span class="merge-result">➔ '${log.merged}' <small style="color:var(--text-muted)">(${log.count}x)</small></span>
+        <div class="merge-row">
+            <span class="merge-pair">'${log.p1}' + '${log.p2}'</span>
+            <span>➔ '${log.merged}'</span>
         </div>
     `).join('');
 }
@@ -322,46 +291,36 @@ function renderMerges(mergeLogs) {
 function runTokenization() {
     const text = testTextEl.value;
     const tokens = tokenizer.encode(text);
-    const decoded = tokenizer.decode(tokens);
 
-    // Update Stats
     statCharsEl.innerText = text.length;
     statTokensEl.innerText = tokens.length;
-    const ratio = tokens.length > 0 ? (text.length / tokens.length).toFixed(2) : '0.00';
-    statRatioEl.innerText = `${ratio} chars/token`;
-    statVocabEl.innerText = Object.keys(tokenizer.vocab).length;
+    const ratio = tokens.length > 0 ? (text.length / tokens.length).toFixed(1) : '0.0';
+    statRatioEl.innerText = ratio;
 
-    // Render Token Pills
     const showIds = showIdsToggle.checked;
     if (tokens.length === 0) {
-        tokenPillsEl.innerHTML = `<div class="empty-state">Type text above to see subword tokens...</div>`;
+        tokenPillsEl.innerHTML = `<span class="placeholder-text">Type text above...</span>`;
         tokenIdsOutputEl.innerText = '[ ]';
-        decodedOutputEl.innerText = '';
         return;
     }
 
     tokenPillsEl.innerHTML = tokens.map(tok => {
         const bgColor = stringToColor(tok.displayStr);
-        const tag = showIds ? `<span class="token-id-tag">${tok.id}</span>` : '';
-        // Escape HTML
+        const tag = showIds ? `<span class="token-id">${tok.id}</span>` : '';
         const safeText = tok.displayStr
             .replace(/&/g, "&amp;")
             .replace(/</g, "&lt;")
             .replace(/>/g, "&gt;");
 
         return `
-            <div class="token-pill" style="background-color: ${bgColor}" title="ID: ${tok.id} | Raw: ${JSON.stringify(tok.displayStr)}">
+            <div class="token-badge" style="background-color: ${bgColor}">
                 <span>${safeText === ' ' ? '␣' : safeText}</span>
                 ${tag}
             </div>
         `;
     }).join('');
 
-    // Token IDs Array
     tokenIdsOutputEl.innerText = `[ ${tokens.map(t => t.id).join(', ')} ]`;
-
-    // Decoded Verification
-    decodedOutputEl.innerText = decoded;
 }
 
 function renderVocabTable() {
@@ -370,8 +329,7 @@ function renderVocabTable() {
 
     for (const [tokenStr, id] of Object.entries(tokenizer.vocab)) {
         const displayStr = Array.from(tokenStr).map(c => byteToUnicode[c.charCodeAt(0)] || c).join('');
-        const hex = Array.from(tokenStr).map(c => c.charCodeAt(0).toString(16).padStart(2, '0')).join(' ');
-        const type = id < 256 ? 'Base Byte' : 'Merged Subword';
+        const type = id < 256 ? 'Byte' : 'Subword';
 
         if (search && !id.toString().includes(search) && !displayStr.toLowerCase().includes(search)) {
             continue;
@@ -379,10 +337,9 @@ function renderVocabTable() {
 
         rows.push(`
             <tr>
-                <td style="color: var(--accent-indigo)">${id}</td>
-                <td style="color: var(--text-main); font-weight:600;">'${displayStr}'</td>
-                <td style="color: var(--text-muted)">${hex}</td>
-                <td><span class="badge" style="${id < 256 ? 'background:rgba(56,189,248,0.15); color:var(--accent-blue);' : ''}">${type}</span></td>
+                <td style="color: var(--accent-color); font-weight:600;">${id}</td>
+                <td>'${displayStr}'</td>
+                <td style="color: var(--text-muted);">${type}</td>
             </tr>
         `);
     }
