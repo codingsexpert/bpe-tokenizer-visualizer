@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>TokenViz - World Class BPE Tokenizer Studio</title>
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -24,14 +24,14 @@
                 </div>
                 <div class="brand-meta">
                     <span class="brand-name">TokenViz Studio</span>
-                    <span class="brand-tag">v5.0 Mobile</span>
+                    <span class="brand-tag">v7.0 Pro</span>
                 </div>
             </div>
 
             <!-- Global Model Engine Switcher -->
             <div class="nav-middle">
                 <div class="engine-selector">
-                    <span class="engine-label">Model:</span>
+                    <span class="engine-label">Tokenizer Engine:</span>
                     <select id="engine-select" class="nav-select">
                         <option value="gpt4o">GPT-4o (o200k_base BPE)</option>
                         <option value="gpt4">GPT-4 / GPT-3.5 (cl100k_base BPE)</option>
@@ -47,9 +47,13 @@
             </div>
 
             <div class="nav-right">
-                <button id="btn-export-json" class="nav-btn">Export</button>
+                <button id="btn-export-json" class="nav-btn">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Export JSON
+                </button>
                 <label class="nav-btn">
-                    Import
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    Import Model
                     <input type="file" id="btn-import-json" accept=".json" class="hidden">
                 </label>
             </div>
@@ -57,28 +61,28 @@
 
         <!-- Main Studio Grid -->
         <main class="studio-grid">
-            <!-- Left Panel: ChatGPT / Claude Style Prompt Container -->
+            <!-- Left Panel: Professional Clean Prompt Box -->
             <section class="panel left-panel">
                 <div class="panel-header">
                     <div class="panel-title">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                        <span>Prompt Input</span>
+                        <span>Prompt Editor</span>
                     </div>
                 </div>
 
-                <!-- ChatGPT / Claude Style Prompt Box -->
+                <!-- Clean Professional Input Card -->
                 <div class="chatgpt-input-card">
-                    <textarea id="prompt-input" rows="3" placeholder="Message TokenViz or paste a prompt..."></textarea>
+                    <textarea id="prompt-input" rows="3" placeholder="Type or paste any text to tokenize..."></textarea>
                     
                     <div class="chatgpt-action-bar">
                         <div class="sample-chips">
                             <button class="chip" data-sample="multilingual">Hindi + English</button>
                             <button class="chip" data-sample="code">Python Code</button>
-                            <button class="chip" data-sample="deepseek">DeepSeek Prompt</button>
+                            <button class="chip" data-sample="math">Math & Logic</button>
                         </div>
 
                         <button id="btn-send-prompt" class="chatgpt-send-btn" title="Tokenize Prompt">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                 <line x1="12" y1="19" x2="12" y2="5"/>
                                 <polyline points="5 12 12 5 19 12"/>
                             </svg>
@@ -89,7 +93,7 @@
                 <!-- Subword Token Visualizer Overlay -->
                 <div class="visualizer-container">
                     <div class="visualizer-bar">
-                        <span class="visualizer-title">Subword Token Badges</span>
+                        <span class="visualizer-title">Subword Tokens Breakdown</span>
                         <div class="visualizer-stats">
                             <span class="vstat"><strong id="vstat-tokens">0</strong> tokens</span>
                             <span class="vstat"><strong id="vstat-chars">0</strong> chars</span>
@@ -104,7 +108,7 @@
                 <!-- Token Heatmap & Compression Density Visualizer -->
                 <div class="heatmap-container">
                     <div class="heatmap-bar">
-                        <span>Compression Heatmap</span>
+                        <span>Token Compression Density</span>
                         <span class="hint-text">Green = High Compression</span>
                     </div>
                     <div class="heatmap-box" id="heatmap-box">
@@ -127,10 +131,10 @@
                 <!-- Tabs Navigation -->
                 <div class="tabs-nav">
                     <button class="tab-btn active" data-tab="tab-tokens">Token Table</button>
-                    <button class="tab-btn" data-tab="tab-diff">Model Compare</button>
+                    <button class="tab-btn" data-tab="tab-diff">Model Benchmark</button>
                     <button class="tab-btn" data-tab="tab-tree">Merge Tree</button>
-                    <button class="tab-btn" data-tab="tab-analytics">Analytics</button>
-                    <button class="tab-btn" data-tab="tab-trainer">Trainer</button>
+                    <button class="tab-btn" data-tab="tab-analytics">Cost & Analytics</button>
+                    <button class="tab-btn" data-tab="tab-trainer">BPE Trainer</button>
                     <button class="tab-btn" data-tab="tab-vocab">Vocab</button>
                 </div>
 
@@ -179,7 +183,7 @@
                             <span class="m-val" id="m-tokens">0</span>
                         </div>
                         <div class="card-metric">
-                            <span class="m-label">Total Chars</span>
+                            <span class="m-label">Total Characters</span>
                             <span class="m-val" id="m-chars">0</span>
                         </div>
                         <div class="card-metric">
@@ -187,14 +191,14 @@
                             <span class="m-val accent" id="m-ratio">0.00</span>
                         </div>
                         <div class="card-metric">
-                            <span class="m-label">GPT-4o Est. Cost</span>
+                            <span class="m-label">Est. GPT-4o Cost</span>
                             <span class="m-val" id="m-cost">$0.00000</span>
                         </div>
                     </div>
 
                     <div class="card-block margin-top">
                         <div class="block-row">
-                            <span>128K Context Utilization</span>
+                            <span>128K Context Window Utilization</span>
                             <span id="ctx-val">0.00%</span>
                         </div>
                         <div class="progress-track">
@@ -205,15 +209,15 @@
                     <div class="card-block margin-top">
                         <span class="block-title">Encoding Efficiency Breakdown</span>
                         <div class="breakdown-row">
-                            <span>Character-Level:</span>
+                            <span>Character-Level Encoding:</span>
                             <strong id="b-char">0 tokens</strong>
                         </div>
                         <div class="breakdown-row">
-                            <span>Word-Level:</span>
+                            <span>Word-Level Encoding:</span>
                             <strong id="b-word">0 tokens</strong>
                         </div>
                         <div class="breakdown-row highlight">
-                            <span>BPE Subword:</span>
+                            <span>BPE Subword Encoding:</span>
                             <strong id="b-bpe">0 tokens</strong>
                         </div>
                     </div>
@@ -234,7 +238,7 @@
                             </div>
                         </div>
 
-                        <button id="btn-train-custom" class="btn-primary">Train Custom BPE</button>
+                        <button id="btn-train-custom" class="btn-primary">Train Custom BPE Tokenizer</button>
 
                         <div class="form-field margin-top">
                             <div class="block-row">
@@ -261,7 +265,7 @@
                             <thead>
                                 <tr>
                                     <th>ID</th>
-                                    <th>Representation</th>
+                                    <th>Token Representation</th>
                                     <th>Type</th>
                                 </tr>
                             </thead>
