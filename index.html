@@ -15,7 +15,7 @@
         <!-- Top Navigation Header -->
         <header class="navbar">
             <div class="brand">
-                <svg class="brand-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="brand-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="4" y="4" width="16" height="16" rx="2"/>
                     <rect x="9" y="9" width="6" height="6"/>
                     <line x1="9" y1="1" x2="9" y2="4"/>
@@ -27,57 +27,125 @@
                     <line x1="1" y1="9" x2="4" y2="9"/>
                     <line x1="1" y1="15" x2="4" y2="15"/>
                 </svg>
-                <span class="brand-title">BPE Tokenizer</span>
+                <span class="brand-title">BPE Tokenizer Pro</span>
             </div>
             
-            <div class="nav-presets">
-                <span class="nav-label">Preset:</span>
-                <button class="preset-tab active" data-preset="multilingual">Multilingual</button>
-                <button class="preset-tab" data-preset="classic">Classic BPE</button>
-                <button class="preset-tab" data-preset="code">Code & Symbols</button>
+            <div class="nav-actions">
+                <div class="model-select-group">
+                    <span class="nav-label">Regex Rule:</span>
+                    <select id="model-regex-select" class="nav-select">
+                        <option value="gpt2">GPT-2 / GPT-3 Pattern</option>
+                        <option value="gpt4">GPT-4 (cl100k_base)</option>
+                        <option value="llama3">Llama 3 / Mistral</option>
+                        <option value="whitespace">Simple Whitespace</option>
+                    </select>
+                </div>
+                <div class="btn-group">
+                    <button id="btn-export-model" class="btn-secondary" title="Export Model JSON">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        Export JSON
+                    </button>
+                    <label class="btn-secondary file-upload-label">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        Import JSON
+                        <input type="file" id="btn-import-model" accept=".json" class="hidden">
+                    </label>
+                </div>
             </div>
         </header>
 
         <!-- Main Workspace -->
         <main class="main-container">
             <!-- Left Side: Interactive Tokenization Playground -->
-            <section class="card main-card">
-                <div class="card-title-bar">
-                    <h2>Live Tokenizer</h2>
-                    <div class="stats-pills">
-                        <span class="stat-pill"><strong id="stat-chars">0</strong> chars</span>
-                        <span class="stat-pill accent"><strong id="stat-tokens">0</strong> tokens</span>
-                        <span class="stat-pill"><strong id="stat-ratio">0.0</strong> ratio</span>
+            <section class="left-column">
+                <div class="card">
+                    <div class="card-title-bar">
+                        <h2>Live Subword Playground</h2>
+                        <div class="stats-pills">
+                            <span class="stat-pill"><strong id="stat-chars">0</strong> chars</span>
+                            <span class="stat-pill accent"><strong id="stat-tokens">0</strong> tokens</span>
+                            <span class="stat-pill"><strong id="stat-ratio">0.0</strong> ratio</span>
+                        </div>
+                    </div>
+
+                    <div class="input-container">
+                        <textarea id="test-text" placeholder="Type text here to visualize subword tokens in real-time..."></textarea>
+                    </div>
+
+                    <!-- Step-by-Step Merge Slider -->
+                    <div class="slider-box">
+                        <div class="slider-header">
+                            <label>Merge Step Playback: <span id="current-step-label">Step Max</span></label>
+                            <div class="playback-controls">
+                                <button id="btn-play-pause" class="btn-icon-sm" title="Play/Pause Animation">
+                                    <svg id="play-icon" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                        <input type="range" id="merge-step-slider" min="0" max="0" value="0" class="step-slider">
+                    </div>
+
+                    <!-- Token Badges Output -->
+                    <div class="output-section">
+                        <div class="output-title-row">
+                            <label>Tokenized Subwords</label>
+                            <label class="toggle-control">
+                                <input type="checkbox" id="show-ids-toggle" checked>
+                                <span>Token IDs</span>
+                            </label>
+                        </div>
+                        <div class="tokens-wrapper" id="token-pills">
+                            <span class="placeholder-text">Type text above...</span>
+                        </div>
+                    </div>
+
+                    <!-- Token ID Array Output -->
+                    <div class="output-section">
+                        <div class="output-title-row">
+                            <label>Token ID Array</label>
+                            <button id="btn-copy-ids" class="btn-secondary">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                Copy IDs
+                            </button>
+                        </div>
+                        <div class="code-box" id="token-ids-output">[ ]</div>
                     </div>
                 </div>
 
-                <div class="input-container">
-                    <textarea id="test-text" placeholder="Type text here to visualize subword tokens in real-time..."></textarea>
-                </div>
-
-                <div class="output-section">
-                    <div class="output-title-row">
-                        <label>Subword Tokens</label>
-                        <label class="toggle-control">
-                            <input type="checkbox" id="show-ids-toggle" checked>
-                            <span>Token IDs</span>
-                        </label>
+                <!-- Token Efficiency & Cost Analytics Card -->
+                <div class="card analytics-card">
+                    <div class="card-title-bar">
+                        <h2>Analytics & Efficiency Comparison</h2>
                     </div>
 
-                    <div class="tokens-wrapper" id="token-pills">
-                        <span class="placeholder-text">Type text above...</span>
+                    <div class="analytics-grid">
+                        <div class="analytic-item">
+                            <span class="analytic-title">Character-Level Tokens</span>
+                            <span class="analytic-value" id="char-token-count">0</span>
+                        </div>
+                        <div class="analytic-item">
+                            <span class="analytic-title">Word-Level Tokens</span>
+                            <span class="analytic-value" id="word-token-count">0</span>
+                        </div>
+                        <div class="analytic-item highlight">
+                            <span class="analytic-title">BPE Subwords</span>
+                            <span class="analytic-value" id="bpe-token-count">0</span>
+                        </div>
+                        <div class="analytic-item">
+                            <span class="analytic-title">Est. GPT-4o Cost</span>
+                            <span class="analytic-value" id="est-cost">$0.0000</span>
+                        </div>
                     </div>
-                </div>
 
-                <div class="output-section margin-top-sm">
-                    <div class="output-title-row">
-                        <label>Token ID Array</label>
-                        <button id="btn-copy-ids" class="btn-secondary">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                            Copy IDs
-                        </button>
+                    <div class="context-bar-wrapper">
+                        <div class="context-label-row">
+                            <span>128K Context Window Usage</span>
+                            <span id="context-pct">0.00%</span>
+                        </div>
+                        <div class="progress-track">
+                            <div class="progress-bar" id="context-progress-bar" style="width: 0%;"></div>
+                        </div>
                     </div>
-                    <div class="code-box" id="token-ids-output">[ ]</div>
                 </div>
             </section>
 
@@ -120,7 +188,7 @@
                 <div class="card sidebar-card flex-1">
                     <div class="card-title-bar">
                         <h2>Vocabulary</h2>
-                        <input type="text" id="vocab-search" placeholder="Search ID or Token..." class="search-box">
+                        <input type="text" id="vocab-search" placeholder="Search ID/Token..." class="search-box">
                     </div>
                     <div class="table-scroll-container">
                         <table class="simple-table">

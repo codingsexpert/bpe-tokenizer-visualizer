@@ -1,8 +1,7 @@
 // =====================================================================
-//  Byte-Level BPE Tokenizer - Clean Minimal Web Engine
+//  Byte-Level BPE Tokenizer Pro Engine
 // =====================================================================
 
-// Refined subtle pastel color palette for tokens
 const PASTEL_PALETTE = [
     '#fef2f2', '#fefce8', '#f0fdf4', '#eff6ff', '#faf5ff',
     '#fff7ed', '#f5f3ff', '#fdf2f8', '#ecfdf5', '#f0fdfa',
@@ -18,7 +17,6 @@ function stringToColor(str) {
     return PASTEL_PALETTE[index];
 }
 
-// Byte to Unicode mapping (GPT-2 style)
 function getBytesToUnicode() {
     const bs = [];
     for (let i = '!'.charCodeAt(0); i <= '~'.charCodeAt(0); i++) bs.push(i);
@@ -46,12 +44,20 @@ function getBytesToUnicode() {
 
 const { byteToUnicode } = getBytesToUnicode();
 
+const REGEX_PATTERNS = {
+    gpt2: /'s|'t|'re|'ve|'m|'ll|'d| ?\w+| ?[^\s\w]+|\s+(?!\S)|\s+/gu,
+    gpt4: /(?:'[sS]|'[tT]|'[rR][eE]|'[vV][eE]|'[mM]|'[lL][lL]|'[dD])|[^r\n\p{L}\p{N}]?\p{L}+|\p{N}{1,3}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+/gu,
+    llama3: /[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]*[\p{Ll}\p{Lm}\p{Lo}\p{M}]+(?i:'s|'t|'re|'ve|'m|'ll|'d)?|[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]+[\p{Ll}\p{Lm}\p{Lo}\p{M}]*(?i:'s|'t|'re|'ve|'m|'ll|'d)?|\p{N}{1,3}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+/gu,
+    whitespace: /\S+|\s+/gu
+};
+
 class JSBPETokenizer {
     constructor() {
         this.vocab = {};
         this.idToVocab = {};
         this.merges = [];
         this.mergeRanks = {};
+        this.selectedRegex = 'gpt2';
         this.reset();
     }
 
@@ -73,7 +79,7 @@ class JSBPETokenizer {
         const numMerges = targetVocabSize - 256;
         if (numMerges <= 0) return [];
 
-        const regex = /'s|'t|'re|'ve|'m|'ll|'d| ?\w+| ?[^\s\w]+|\s+(?!\S)|\s+/gu;
+        const regex = REGEX_PATTERNS[this.selectedRegex] || REGEX_PATTERNS.gpt2;
         const chunks = text.match(regex) || [text];
 
         const wordFreq = new Map();
@@ -151,7 +157,7 @@ class JSBPETokenizer {
         return mergeLogs;
     }
 
-    encodeChunk(chunkBytes) {
+    encodeChunk(chunkBytes, maxMergeRank = Infinity) {
         if (chunkBytes.length === 0) return [];
         let parts = chunkBytes.map(b => String.fromCharCode(b));
 
@@ -163,7 +169,7 @@ class JSBPETokenizer {
                 const key = parts[i] + '|' + parts[i + 1];
                 if (key in this.mergeRanks) {
                     const rank = this.mergeRanks[key];
-                    if (rank < minRank) {
+                    if (rank <= maxMergeRank && rank < minRank) {
                         minRank = rank;
                         bestIdx = i;
                     }
@@ -183,28 +189,24 @@ class JSBPETokenizer {
         }));
     }
 
-    encode(text) {
-        const regex = /'s|'t|'re|'ve|'m|'ll|'d| ?\w+| ?[^\s\w]+|\s+(?!\S)|\s+/gu;
+    encode(text, maxMergeStep = Infinity) {
+        const regex = REGEX_PATTERNS[this.selectedRegex] || REGEX_PATTERNS.gpt2;
         const chunks = text.match(regex) || (text ? [text] : []);
         const encoder = new TextEncoder();
         let tokens = [];
 
         for (const chunk of chunks) {
             const bytes = Array.from(encoder.encode(chunk));
-            tokens = tokens.concat(this.encodeChunk(bytes));
+            tokens = tokens.concat(this.encodeChunk(bytes, maxMergeStep));
         }
         return tokens;
     }
 }
 
-// Controller
+// Global App Instance
 const tokenizer = new JSBPETokenizer();
-
-const PRESETS = {
-    multilingual: `Hello world! Don't worry, BPE tokenization is 100% working. नमस्ते दुनिया! Python BPE tokenizer is super fast and clean. low lower lowest newest newer.`,
-    classic: `low low low low low lower lower newest newest newest`,
-    code: `function bpeTokenize(text) { return text.split('').map(c => c.charCodeAt(0)); }`
-};
+let isPlaying = false;
+let playInterval = null;
 
 // DOM Elements
 const trainTextEl = document.getElementById('train-text');
@@ -224,28 +226,44 @@ const statCharsEl = document.getElementById('stat-chars');
 const statTokensEl = document.getElementById('stat-tokens');
 const statRatioEl = document.getElementById('stat-ratio');
 
+const modelRegexSelect = document.getElementById('model-regex-select');
+const mergeStepSlider = document.getElementById('merge-step-slider');
+const currentStepLabel = document.getElementById('current-step-label');
+const btnPlayPause = document.getElementById('btn-play-pause');
+
+const charTokenCountEl = document.getElementById('char-token-count');
+const wordTokenCountEl = document.getElementById('word-token-count');
+const bpeTokenCountEl = document.getElementById('bpe-token-count');
+const estCostEl = document.getElementById('est-cost');
+const contextPctEl = document.getElementById('context-pct');
+const contextProgressBar = document.getElementById('context-progress-bar');
+
+const btnExportModel = document.getElementById('btn-export-model');
+const btnImportModel = document.getElementById('btn-import-model');
+
 const vocabTableBody = document.getElementById('vocab-table-body');
 const vocabSearchEl = document.getElementById('vocab-search');
 
 document.addEventListener('DOMContentLoaded', () => {
-    trainTextEl.value = PRESETS.multilingual;
+    trainTextEl.value = `Hello world! Don't worry, BPE tokenization is 100% working. नमस्ते दुनिया! Python BPE tokenizer is super fast and clean. low lower lowest newest newer.`;
     testTextEl.value = "Hello world! Don't worry, नमस्ते दुनिया!";
-
-    document.querySelectorAll('.preset-tab').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            document.querySelectorAll('.preset-tab').forEach(b => b.classList.remove('active'));
-            e.target.classList.add('active');
-            const key = e.target.dataset.preset;
-            trainTextEl.value = PRESETS[key];
-            runTraining();
-        });
-    });
 
     targetVocabEl.addEventListener('input', () => {
         const val = parseInt(targetVocabEl.value) || 300;
         maxMergesEl.value = Math.max(0, val - 256);
     });
 
+    modelRegexSelect.addEventListener('change', (e) => {
+        tokenizer.selectedRegex = e.target.value;
+        runTraining();
+    });
+
+    mergeStepSlider.addEventListener('input', () => {
+        updateStepLabel();
+        runTokenization();
+    });
+
+    btnPlayPause.addEventListener('click', togglePlayPause);
     btnTrain.addEventListener('click', runTraining);
     testTextEl.addEventListener('input', runTokenization);
     showIdsToggle.addEventListener('change', runTokenization);
@@ -253,11 +271,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     btnCopyIds.addEventListener('click', () => {
         navigator.clipboard.writeText(tokenIdsOutputEl.innerText);
-        btnCopyIds.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Copied`;
-        setTimeout(() => {
-            btnCopyIds.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy IDs`;
-        }, 1500);
+        btnCopyIds.innerText = "Copied!";
+        setTimeout(() => btnCopyIds.innerText = "Copy IDs", 1500);
     });
+
+    btnExportModel.addEventListener('click', exportModel);
+    btnImportModel.addEventListener('change', importModel);
 
     maxMergesEl.value = parseInt(targetVocabEl.value) - 256;
     runTraining();
@@ -268,35 +287,83 @@ function runTraining() {
     const targetVocab = parseInt(targetVocabEl.value) || 300;
     const mergeLogs = tokenizer.train(text, targetVocab);
     
+    // Update Slider Bounds
+    const maxMerges = mergeLogs.length;
+    mergeStepSlider.max = maxMerges;
+    mergeStepSlider.value = maxMerges;
+    updateStepLabel();
+
     renderMerges(mergeLogs);
     renderVocabTable();
     runTokenization();
 }
 
-function renderMerges(mergeLogs) {
-    mergesCountEl.innerText = mergeLogs.length;
-    if (mergeLogs.length === 0) {
-        mergesListEl.innerHTML = `<span class="placeholder-text">No merges learned.</span>`;
-        return;
-    }
+function updateStepLabel() {
+    const val = parseInt(mergeStepSlider.value);
+    const max = parseInt(mergeStepSlider.max);
+    currentStepLabel.innerText = val === max ? `Step ${val} (Max)` : `Step ${val}/${max}`;
+}
 
-    mergesListEl.innerHTML = mergeLogs.map(log => `
-        <div class="merge-row">
-            <span class="merge-pair">'${log.p1}' + '${log.p2}'</span>
-            <span>➔ '${log.merged}'</span>
-        </div>
-    `).join('');
+function togglePlayPause() {
+    if (isPlaying) {
+        clearInterval(playInterval);
+        isPlaying = false;
+        btnPlayPause.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>`;
+    } else {
+        isPlaying = true;
+        btnPlayPause.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`;
+        
+        if (parseInt(mergeStepSlider.value) >= parseInt(mergeStepSlider.max)) {
+            mergeStepSlider.value = 0;
+        }
+
+        playInterval = setInterval(() => {
+            let curr = parseInt(mergeStepSlider.value);
+            let max = parseInt(mergeStepSlider.max);
+            if (curr < max) {
+                mergeStepSlider.value = curr + 1;
+                updateStepLabel();
+                runTokenization();
+            } else {
+                togglePlayPause();
+            }
+        }, 300);
+    }
 }
 
 function runTokenization() {
     const text = testTextEl.value;
-    const tokens = tokenizer.encode(text);
+    const currentStep = parseInt(mergeStepSlider.value) - 1;
+    const maxStep = currentStep < 0 ? -1 : currentStep;
 
+    const tokens = tokenizer.encode(text, maxStep);
+
+    // Stats
     statCharsEl.innerText = text.length;
     statTokensEl.innerText = tokens.length;
     const ratio = tokens.length > 0 ? (text.length / tokens.length).toFixed(1) : '0.0';
     statRatioEl.innerText = ratio;
 
+    // Analytics Calculation
+    const encoder = new TextEncoder();
+    const charTokensCount = Array.from(encoder.encode(text)).length;
+    const wordTokensCount = text.trim() ? text.trim().split(/\s+/).length : 0;
+    const bpeTokensCount = tokens.length;
+
+    charTokenCountEl.innerText = charTokensCount;
+    wordTokenCountEl.innerText = wordTokensCount;
+    bpeTokenCountEl.innerText = bpeTokensCount;
+
+    // Est GPT-4o cost ($0.0025 per 1000 tokens)
+    const cost = (bpeTokensCount / 1000) * 0.0025;
+    estCostEl.innerText = `$${cost.toFixed(5)}`;
+
+    // 128k Context Window usage %
+    const contextPct = ((bpeTokensCount / 128000) * 100).toFixed(3);
+    contextPctEl.innerText = `${contextPct}%`;
+    contextProgressBar.style.width = `${Math.min(100, Math.max(0.5, parseFloat(contextPct)))}%`;
+
+    // Render Pills
     const showIds = showIdsToggle.checked;
     if (tokens.length === 0) {
         tokenPillsEl.innerHTML = `<span class="placeholder-text">Type text above...</span>`;
@@ -323,6 +390,21 @@ function runTokenization() {
     tokenIdsOutputEl.innerText = `[ ${tokens.map(t => t.id).join(', ')} ]`;
 }
 
+function renderMerges(mergeLogs) {
+    mergesCountEl.innerText = mergeLogs.length;
+    if (mergeLogs.length === 0) {
+        mergesListEl.innerHTML = `<span class="placeholder-text">No merges learned.</span>`;
+        return;
+    }
+
+    mergesListEl.innerHTML = mergeLogs.map(log => `
+        <div class="merge-row">
+            <span class="merge-pair">'${log.p1}' + '${log.p2}'</span>
+            <span>➔ '${log.merged}'</span>
+        </div>
+    `).join('');
+}
+
 function renderVocabTable() {
     const search = vocabSearchEl.value.toLowerCase();
     const rows = [];
@@ -345,4 +427,53 @@ function renderVocabTable() {
     }
 
     vocabTableBody.innerHTML = rows.join('');
+}
+
+function exportModel() {
+    const data = {
+        vocab: tokenizer.vocab,
+        merges: tokenizer.merges,
+        selectedRegex: tokenizer.selectedRegex
+    };
+    const jsonStr = JSON.stringify(data, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'bpe_tokenizer_model.json';
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+function importModel(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+        try {
+            const data = JSON.parse(evt.target.result);
+            tokenizer.vocab = data.vocab || {};
+            tokenizer.idToVocab = {};
+            for (const [k, v] of Object.entries(tokenizer.vocab)) {
+                tokenizer.idToVocab[v] = k;
+            }
+            tokenizer.merges = data.merges || [];
+            tokenizer.mergeRanks = {};
+            tokenizer.merges.forEach((pair, idx) => {
+                tokenizer.mergeRanks[pair[0] + '|' + pair[1]] = idx;
+            });
+            if (data.selectedRegex) {
+                tokenizer.selectedRegex = data.selectedRegex;
+                modelRegexSelect.value = data.selectedRegex;
+            }
+
+            renderVocabTable();
+            runTokenization();
+            alert("✓ Tokenizer Model Imported Successfully!");
+        } catch (err) {
+            alert("Failed to parse JSON model file.");
+        }
+    };
+    reader.readAsText(file);
 }
