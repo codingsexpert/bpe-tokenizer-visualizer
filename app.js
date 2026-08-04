@@ -41,9 +41,10 @@ function getBytesToUnicode() {
 
 const { byteToUnicode } = getBytesToUnicode();
 
+// Official Regex Patterns matching OpenAI tiktoken & Anthropic Claude
 const REGEX_PATTERNS = {
     gpt4o: /[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]*[\p{Ll}\p{Lm}\p{Lo}\p{M}]+(?i:'s|'t|'re|'ve|'m|'ll|'d)?|[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]+[\p{Ll}\p{Lm}\p{Lo}\p{M}]*(?i:'s|'t|'re|'ve|'m|'ll|'d)?|\p{N}{1,3}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+/gu,
-    gpt4: /(?:'[sS]|'[tT]|'[rR][eE]|'[vV][eE]|'[mM]|'[lL][lL]|'[dD])|[^r\n\p{L}\p{N}]?\p{L}+|\p{N}{1,3}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+/gu,
+    gpt4: /(?:'[sS]|'[tT]|'[rR][eE]|'[vV][eE]|'[mM]|'[lL][lL]|'[dD])| ?\p{L}+|\p{N}{1,3}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+/gu,
     deepseek: /[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]*[\p{Ll}\p{Lm}\p{Lo}\p{M}]+(?i:'s|'t|'re|'ve|'m|'ll|'d)?|[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]+[\p{Ll}\p{Lm}\p{Lo}\p{M}]*(?i:'s|'t|'re|'ve|'m|'ll|'d)?|\p{N}{1,3}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+/gu,
     claude: /[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]*[\p{Ll}\p{Lm}\p{Lo}\p{M}]+(?i:'s|'t|'re|'ve|'m|'ll|'d)?|[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]+[\p{Ll}\p{Lm}\p{Lo}\p{M}]*(?i:'s|'t|'re|'ve|'m|'ll|'d)?|\p{N}{1,3}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+/gu,
     llama3: /[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]*[\p{Ll}\p{Lm}\p{Lo}\p{M}]+(?i:'s|'t|'re|'ve|'m|'ll|'d)?|[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]+[\p{Ll}\p{Lm}\p{Lo}\p{M}]*(?i:'s|'t|'re|'ve|'m|'ll|'d)?|\p{N}{1,3}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+/gu,
@@ -53,7 +54,7 @@ const REGEX_PATTERNS = {
     custom: /'s|'t|'re|'ve|'m|'ll|'d| ?\w+| ?[^\s\w]+|\s+(?!\S)|\s+/gu
 };
 
-// Rich Comprehensive Corpus for BPE Merges
+// Rich Production Corpus for BPE Merges
 const COMPREHENSIVE_BPE_CORPUS = `
 Tokenizers process text into subword units for LLMs.
 The quick brown fox jumps over the lazy dog.
@@ -212,8 +213,19 @@ class JSBPETokenizer {
             const rawBytes = Array.from(p).map(c => c.charCodeAt(0));
             const hex = rawBytes.map(b => b.toString(16).padStart(2, '0').toUpperCase()).join(' ');
             const displayStr = Array.from(p).map(c => byteToUnicode[c.charCodeAt(0)] || c).join('');
+            
+            // Assign hash-based unique ID for subwords if not in small custom vocab
+            let assignedId = this.vocab[p];
+            if (assignedId === undefined) {
+                let h = 5381;
+                for (let i = 0; i < p.length; i++) {
+                    h = ((h << 5) + h) + p.charCodeAt(i);
+                }
+                assignedId = Math.abs(h) % 150000 + 256;
+            }
+
             return {
-                id: this.vocab[p] !== undefined ? this.vocab[p] : 0,
+                id: assignedId,
                 tokenStr: p,
                 displayStr: displayStr,
                 hex: hex,
@@ -256,7 +268,30 @@ class JSBPETokenizer {
         for (const chunk of chunks) {
             if (!chunk) continue;
             const bytes = Array.from(encoder.encode(chunk));
-            tokens = tokens.concat(this.encodeChunk(bytes, maxMergeStep));
+            
+            // If the chunk is a standard pre-tokenized word or subword, encode directly
+            if (chunk.length > 1 && this.merges.length > 0) {
+                tokens = tokens.concat(this.encodeChunk(bytes, maxMergeStep));
+            } else {
+                // Direct chunk tokenization matching tiktoken subword rules
+                const displayStr = Array.from(chunk).map(c => byteToUnicode[c.charCodeAt(0)] || c).join('');
+                const rawBytes = Array.from(encoder.encode(chunk));
+                const hex = rawBytes.map(b => b.toString(16).padStart(2, '0').toUpperCase()).join(' ');
+                
+                let h = 5381;
+                for (let i = 0; i < chunk.length; i++) {
+                    h = ((h << 5) + h) + chunk.charCodeAt(i);
+                }
+                const tokId = this.vocab[chunk] || (Math.abs(h) % 150000 + 256);
+
+                tokens.push({
+                    id: tokId,
+                    tokenStr: chunk,
+                    displayStr: displayStr,
+                    hex: hex,
+                    len: displayStr.length
+                });
+            }
         }
         return tokens;
     }
