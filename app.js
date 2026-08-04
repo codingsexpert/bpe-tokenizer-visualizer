@@ -313,15 +313,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Sample Chips
-    document.querySelectorAll('.chip').forEach(chip => {
-        chip.addEventListener('click', (e) => {
-            const key = e.target.dataset.sample;
-            promptInput.value = SAMPLES[key];
-            runTokenization();
-        });
-    });
-
     // Engine Selection
     engineSelect.addEventListener('change', (e) => {
         tokenizer.selectedRegex = e.target.value;
