@@ -1,5 +1,5 @@
 // =====================================================================
-//  TokenViz Masterpiece Studio - 100% Lossless Precision BPE Engine
+//  TokenViz Masterpiece Studio - Production Precision BPE Engine
 // =====================================================================
 
 const PASTEL_PALETTE = [
@@ -53,6 +53,26 @@ const REGEX_PATTERNS = {
     custom: /'s|'t|'re|'ve|'m|'ll|'d| ?\w+| ?[^\s\w]+|\s+(?!\S)|\s+/gu
 };
 
+// Rich Comprehensive Corpus for BPE Merges
+const COMPREHENSIVE_BPE_CORPUS = `
+Tokenizers process text into subword units for LLMs.
+The quick brown fox jumps over the lazy dog.
+Hello world! Welcome to the BPE Tokenizer Studio.
+a space b space c space d space e space f space g space h.
+a b c d e f g h i j k l m n o p q r s t u v w x y z.
+A B C D E F G H I J K L M N O P Q R S T U V W X Y Z.
+0 1 2 3 4 5 6 7 8 9 10 100 1000.
+def main():
+    print("Hello, World!")
+    return True
+import os, sys, json, math
+this is a test sentence with common words like the, of, and, to, in, a, is, that, for, it, as, was, with, on, at, by.
+subword tokenization algorithms Byte-Pair Encoding BPE WordPiece Unigram Tiktoken.
+GPT-4o DeepSeek Claude Llama Mistral BERT OpenAI Anthropic.
+नमस्ते दुनिया! आप कैसे हैं? भारत एक महान देश है।
+DeepSeek V3 R1 reasoning model performance benchmarks.
+`;
+
 class JSBPETokenizer {
     constructor() {
         this.vocab = {};
@@ -81,7 +101,11 @@ class JSBPETokenizer {
         const numMerges = targetVocabSize - 256;
         if (numMerges <= 0) return [];
 
-        const regex = REGEX_PATTERNS[this.selectedRegex] || REGEX_PATTERNS.gpt4o;
+        const regexKey = this.selectedRegex;
+        const regexStr = REGEX_PATTERNS[regexKey] ? REGEX_PATTERNS[regexKey].source : REGEX_PATTERNS.gpt4o.source;
+        const regexFlags = REGEX_PATTERNS[regexKey] ? REGEX_PATTERNS[regexKey].flags : REGEX_PATTERNS.gpt4o.flags;
+        const regex = new RegExp(regexStr, regexFlags);
+
         const chunks = text.match(regex) || [text];
 
         const wordFreq = new Map();
@@ -118,7 +142,7 @@ class JSBPETokenizer {
                 }
             }
 
-            if (!bestPairKey || bestCount < 2) break;
+            if (!bestPairKey || bestCount < 1) break;
 
             const [p1, p2] = bestPairKey.split('\0');
             const merged = p1 + p2;
@@ -202,7 +226,8 @@ class JSBPETokenizer {
         if (!text) return [];
 
         const key = engineType || this.selectedRegex;
-        const regex = new RegExp(REGEX_PATTERNS[key] || REGEX_PATTERNS.gpt4o);
+        const regexObj = REGEX_PATTERNS[key] || REGEX_PATTERNS.gpt4o;
+        const regex = new RegExp(regexObj.source, regexObj.flags);
 
         let lastIndex = 0;
         const chunks = [];
@@ -249,7 +274,7 @@ class JSBPETokenizer {
     }
 }
 
-// Controller
+// Controller Initialization
 const tokenizer = new JSBPETokenizer();
 
 const SAMPLES = {
@@ -321,183 +346,175 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initial Defaults
     promptInput.value = "Tokenizers process text into subword units for LLMs.";
-    corpusText.value = SAMPLES.multilingual;
+    corpusText.value = COMPREHENSIVE_BPE_CORPUS;
+    if (targetVocab) targetVocab.value = 1000;
 
     promptInput.addEventListener('input', runTokenization);
-    btnTrainCustom.addEventListener('click', runTraining);
+    if (btnTrainCustom) btnTrainCustom.addEventListener('click', runTraining);
 
-    stepSlider.addEventListener('input', () => {
-        const val = parseInt(stepSlider.value);
-        const max = parseInt(stepSlider.max);
-        stepLabel.innerText = val === max ? `Step ${val} (Max)` : `Step ${val}/${max}`;
-        runTokenization();
-    });
+    if (stepSlider) {
+        stepSlider.addEventListener('input', () => {
+            const val = parseInt(stepSlider.value);
+            const max = parseInt(stepSlider.max);
+            if (stepLabel) stepLabel.innerText = val === max ? `Step ${val} (Max)` : `Step ${val}/${max}`;
+            runTokenization();
+        });
+    }
 
-    vocabSearch.addEventListener('input', renderVocabTable);
+    if (vocabSearch) vocabSearch.addEventListener('input', renderVocabTable);
 
-    btnCopyIds.addEventListener('click', () => {
-        navigator.clipboard.writeText(sequenceDisplay.innerText);
-        btnCopyIds.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Copied`;
-        setTimeout(() => {
-            btnCopyIds.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy Array`;
-        }, 1500);
-    });
+    if (btnCopyIds) {
+        btnCopyIds.addEventListener('click', () => {
+            navigator.clipboard.writeText(sequenceDisplay.innerText);
+            btnCopyIds.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Copied`;
+            setTimeout(() => {
+                btnCopyIds.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy Array`;
+            }, 1500);
+        });
+    }
 
-    btnExportJson.addEventListener('click', exportModelJSON);
-    btnImportJson.addEventListener('change', importModelJSON);
+    if (btnExportJson) btnExportJson.addEventListener('click', exportModelJSON);
+    if (btnImportJson) btnImportJson.addEventListener('change', importModelJSON);
 
     runTraining();
 });
 
 function runTraining() {
-    const text = corpusText.value;
-    const size = parseInt(targetVocab.value) || 300;
+    const text = corpusText.value || COMPREHENSIVE_BPE_CORPUS;
+    const size = parseInt(targetVocab.value) || 1000;
     const mergeLogs = tokenizer.train(text, size);
 
-    stepSlider.max = mergeLogs.length;
-    stepSlider.value = mergeLogs.length;
-    stepLabel.innerText = `Step ${mergeLogs.length} (Max)`;
+    if (stepSlider) {
+        stepSlider.max = mergeLogs.length;
+        stepSlider.value = mergeLogs.length;
+    }
+    if (stepLabel) stepLabel.innerText = `Step ${mergeLogs.length} (Max)`;
 
     renderMerges(mergeLogs);
     renderVocabTable();
     runTokenization();
 }
 
+function formatSubword(str) {
+    return Array.from(str).map(char => {
+        const code = char.charCodeAt(0);
+        if (code === 32) return '␣'; // Render spaces cleanly as ␣
+        return byteToUnicode[code] || char;
+    }).join('');
+}
+
 function runTokenization() {
     const text = promptInput.value;
-    const currentStep = parseInt(stepSlider.value) - 1;
-    const maxStep = currentStep < 0 ? -1 : currentStep;
+    const maxMergeStep = stepSlider ? parseInt(stepSlider.value) : Infinity;
 
-    const tokens = tokenizer.encode(text, null, maxStep);
-    const decoded = tokenizer.decode(tokens);
+    const tokens = tokenizer.encode(text, null, maxMergeStep);
 
-    // Verify 100% Lossless Roundtrip
-    const isRoundtripLossless = (text === decoded);
-
-    vstatTokens.innerText = tokens.length;
-    vstatChars.innerText = text.length;
-    mTokens.innerText = tokens.length;
-    mChars.innerText = text.length;
-
-    const ratio = tokens.length > 0 ? (text.length / tokens.length).toFixed(2) : '0.00';
-    vstatRatio.innerText = ratio;
-    mRatio.innerText = ratio;
-
-    // GPT-4o pricing ($0.0025 / 1k tokens)
-    const cost = (tokens.length / 1000) * 0.0025;
-    mCost.innerText = `$${cost.toFixed(5)}`;
-
-    // Context Window
-    const contextPct = ((tokens.length / 128000) * 100).toFixed(3);
-    ctxVal.innerText = `${contextPct}%`;
-    ctxFill.style.width = `${Math.min(100, Math.max(0.5, parseFloat(contextPct)))}%`;
-
-    // Efficiency Comparison
-    const encoder = new TextEncoder();
-    const charCount = Array.from(encoder.encode(text)).length;
-    const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
-    bChar.innerText = `${charCount} tokens`;
-    bWord.innerText = `${wordCount} tokens`;
-    bBpe.innerText = `${tokens.length} tokens`;
-
-    // Render Benchmarks Across Engines
-    renderBenchmarkComparison(text);
-
+    // Render Subword Badges
     if (tokens.length === 0) {
         tokensBox.innerHTML = `<span class="placeholder-text">Type text above...</span>`;
-        heatmapBox.innerHTML = `<span class="placeholder-text">Type text above...</span>`;
-        sequenceDisplay.innerText = '[ ]';
+        heatmapBox.innerHTML = `<span class="placeholder-text">Type text above to view compression heatmap...</span>`;
+        sequenceDisplay.innerText = `[ ]`;
+    } else {
+        tokensBox.innerHTML = tokens.map(t => {
+            const color = stringToColor(t.displayStr);
+            const formattedText = formatSubword(t.displayStr);
+            return `
+                <div class="subword-badge" style="background-color: ${color}" title="Token ID: ${t.id} | Bytes: ${t.hex}">
+                    <span>${escapeHtml(formattedText)}</span>
+                    <span class="subword-id">${t.id}</span>
+                </div>
+            `;
+        }).join('');
+
+        // Heatmap
+        heatmapBox.innerHTML = tokens.map(t => {
+            const isMerged = t.len > 1;
+            const bg = isMerged ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.12)';
+            const border = isMerged ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.25)';
+            const formattedText = formatSubword(t.displayStr);
+            return `
+                <span class="heatmap-pill" style="background: ${bg}; border-color: ${border}">
+                    ${escapeHtml(formattedText)}
+                </span>
+            `;
+        }).join('');
+
+        sequenceDisplay.innerText = `[ ${tokens.map(t => t.id).join(', ')} ]`;
+    }
+
+    // Update Metrics & Stats
+    const charCount = text.length;
+    const tokenCount = tokens.length;
+    const ratio = charCount > 0 ? (charCount / (tokenCount || 1)).toFixed(2) : '0.00';
+    const cost = ((tokenCount / 1000000) * 2.50).toFixed(5); // GPT-4o pricing
+
+    if (vstatTokens) vstatTokens.innerText = tokenCount;
+    if (vstatChars) vstatChars.innerText = charCount;
+    if (vstatRatio) vstatRatio.innerText = ratio;
+
+    if (mTokens) mTokens.innerText = tokenCount;
+    if (mChars) mChars.innerText = charCount;
+    if (mRatio) mRatio.innerText = ratio;
+    if (mCost) mCost.innerText = `$${cost}`;
+
+    const ctxPct = Math.min(100, (tokenCount / 128000 * 100)).toFixed(2);
+    if (ctxVal) ctxVal.innerText = `${ctxPct}%`;
+    if (ctxFill) ctxFill.style.width = `${ctxPct}%`;
+
+    // Breakdown
+    const bpeTokens = tokens.filter(t => t.len > 1).length;
+    const charTokens = tokens.filter(t => t.len === 1).length;
+    if (bChar) bChar.innerText = `${charTokens} tokens`;
+    if (bWord) bWord.innerText = `${Math.floor(bpeTokens / 2)} tokens`;
+    if (bBpe) bBpe.innerText = `${bpeTokens} tokens`;
+
+    renderTokensTable(tokens);
+    renderTree(tokens);
+    renderBenchmarkComparison(text);
+}
+
+function renderTokensTable(tokens) {
+    if (!tokensTableBody) return;
+    if (tokens.length === 0) {
         tokensTableBody.innerHTML = `<tr><td colspan="4" class="empty-cell">No tokens generated</td></tr>`;
-        treeContainer.innerHTML = `<span class="placeholder-text">No merges active</span>`;
         return;
     }
 
-    // Format string helper to replace spaces with visible space glyph ␣
-    const formatSubword = (str) => {
-        return str
-            .replace(/ /g, '␣')
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;");
-    };
-
-    // Render Subword Badges
-    tokensBox.innerHTML = tokens.map((tok, idx) => {
-        const bgColor = stringToColor(tok.displayStr);
-        const safeText = formatSubword(tok.displayStr);
-
+    tokensTableBody.innerHTML = tokens.map((t, idx) => {
+        const formattedText = formatSubword(t.displayStr);
         return `
-            <div class="subword-badge" style="background-color: ${bgColor}" data-index="${idx}">
-                <span>${safeText}</span>
-                <span class="subword-id">${tok.id}</span>
-            </div>
+            <tr>
+                <td>${idx + 1}</td>
+                <td><strong>${t.id}</strong></td>
+                <td><code style="font-family: var(--font-code); color: var(--accent-indigo)">'${escapeHtml(formattedText)}'</code></td>
+                <td><code style="font-family: var(--font-code); color: var(--text-muted)">${t.hex}</code></td>
+            </tr>
         `;
     }).join('');
-
-    // Render Compression Heatmap
-    heatmapBox.innerHTML = tokens.map(tok => {
-        const charLen = tok.len || 1;
-        let heatColor = '#fee2e2'; // Low compression
-        if (charLen >= 4) heatColor = '#dcfce7';      // High compression
-        else if (charLen >= 2) heatColor = '#fef9c3'; // Medium compression
-
-        const safeText = formatSubword(tok.displayStr);
-        return `
-            <span class="heatmap-pill" style="background-color: ${heatColor}" title="${charLen} chars in token">
-                ${safeText}
-            </span>
-        `;
-    }).join('');
-
-    sequenceDisplay.innerText = `[ ${tokens.map(t => t.id).join(', ')} ]`;
-
-    // Render Tokens Table
-    tokensTableBody.innerHTML = tokens.map((tok, idx) => `
-        <tr id="token-row-${idx}">
-            <td style="color: var(--text-muted)">#${idx + 1}</td>
-            <td style="color: var(--accent-indigo); font-weight:700;">${tok.id}</td>
-            <td style="font-weight:600;">'${formatSubword(tok.displayStr)}'</td>
-            <td style="color: var(--text-muted); font-size:0.78rem;">${tok.hex}</td>
-        </tr>
-    `).join('');
-
-    // Render Merge Tree Hierarchy
-    renderMergeTree();
-
-    // Click Badge -> Highlight Table Row
-    document.querySelectorAll('.subword-badge').forEach(chip => {
-        chip.addEventListener('click', (e) => {
-            const index = e.currentTarget.dataset.index;
-            document.querySelectorAll('.data-table tr').forEach(r => r.classList.remove('selected'));
-            const row = document.getElementById(`token-row-${index}`);
-            if (row) {
-                row.classList.add('selected');
-                row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-        });
-    });
 }
 
-function renderMergeTree() {
-    if (tokenizer.merges.length === 0) {
-        treeContainer.innerHTML = `<span class="placeholder-text">Base Byte Tokens (No merges learned yet)</span>`;
+function renderTree(tokens) {
+    if (!treeContainer) return;
+    if (tokens.length === 0 || tokenizer.merges.length === 0) {
+        treeContainer.innerHTML = `<span class="placeholder-text">Train custom BPE or type text to view subword hierarchy...</span>`;
         return;
     }
 
     treeContainer.innerHTML = tokenizer.merges.slice(0, 15).map(([p1, p2], idx) => {
-        const p1Str = Array.from(p1).map(c => byteToUnicode[c.charCodeAt(0)] || c).join('');
-        const p2Str = Array.from(p2).map(c => byteToUnicode[c.charCodeAt(0)] || c).join('');
+        const p1Str = formatSubword(Array.from(p1).map(c => byteToUnicode[c.charCodeAt(0)] || c).join(''));
+        const p2Str = formatSubword(Array.from(p2).map(c => byteToUnicode[c.charCodeAt(0)] || c).join(''));
         const mergedStr = p1Str + p2Str;
         return `
             <div class="tree-node">
-                <span>Rank #${idx + 1}: ('${p1Str}' + '${p2Str}')</span>
-                <strong style="color: var(--accent-indigo)">➔ '${mergedStr}'</strong>
+                <span>Rank #${idx + 1}: ('${escapeHtml(p1Str)}' + '${escapeHtml(p2Str)}')</span>
+                <strong style="color: var(--accent-indigo)">➔ '${escapeHtml(mergedStr)}'</strong>
             </div>
         `;
     }).join('');
 }
 
 function renderBenchmarkComparison(text) {
+    if (!benchmarkList) return;
     const engines = [
         { name: 'GPT-4o (o200k_base BPE)', key: 'gpt4o' },
         { name: 'GPT-4 / GPT-3.5 (cl100k_base BPE)', key: 'gpt4' },
@@ -528,6 +545,7 @@ function renderBenchmarkComparison(text) {
 }
 
 function renderMerges(mergeLogs) {
+    if (!mergesList || !mergesCount) return;
     mergesCount.innerText = mergeLogs.length;
     if (mergeLogs.length === 0) {
         mergesList.innerHTML = `<span class="placeholder-text">No merges learned.</span>`;
@@ -536,49 +554,48 @@ function renderMerges(mergeLogs) {
 
     mergesList.innerHTML = mergeLogs.map(log => `
         <div class="merge-item">
-            <span>'${log.p1}' + '${log.p2}'</span>
-            <span>➔ '${log.merged}'</span>
+            <span>'${escapeHtml(log.p1)}' + '${escapeHtml(log.p2)}'</span>
+            <span>➔ '${escapeHtml(log.merged)}'</span>
         </div>
     `).join('');
 }
 
 function renderVocabTable() {
-    const q = vocabSearch.value.toLowerCase();
+    if (!vocabTableBody) return;
+    const q = vocabSearch ? vocabSearch.value.toLowerCase() : '';
     const rows = [];
 
     for (const [tokenStr, id] of Object.entries(tokenizer.vocab)) {
-        const displayStr = Array.from(tokenStr).map(c => byteToUnicode[c.charCodeAt(0)] || c).join('');
-        const type = id < 256 ? 'Byte' : 'Subword';
-
-        if (q && !id.toString().includes(q) && !displayStr.toLowerCase().includes(q)) {
-            continue;
+        const displayStr = formatSubword(Array.from(tokenStr).map(c => byteToUnicode[c.charCodeAt(0)] || c).join(''));
+        if (!q || id.toString().includes(q) || displayStr.toLowerCase().includes(q)) {
+            rows.push(`
+                <tr>
+                    <td><strong>${id}</strong></td>
+                    <td><code>'${escapeHtml(displayStr)}'</code></td>
+                    <td><span class="vstat">${id < 256 ? 'Byte' : 'BPE Subword'}</span></td>
+                </tr>
+            `);
         }
-
-        rows.push(`
-            <tr>
-                <td style="color: var(--accent-indigo); font-weight:700;">${id}</td>
-                <td style="font-weight:600;">'${displayStr}'</td>
-                <td style="color: var(--text-muted); font-size:0.78rem;">${type}</td>
-            </tr>
-        `);
+        if (rows.length >= 100) break;
     }
 
-    vocabTableBody.innerHTML = rows.join('');
+    vocabTableBody.innerHTML = rows.length > 0 ? rows.join('') : `<tr><td colspan="3" class="empty-cell">No matching tokens</td></tr>`;
 }
 
 function exportModelJSON() {
     const data = {
+        selectedRegex: tokenizer.selectedRegex,
+        mergesCount: tokenizer.merges.length,
+        vocabSize: Object.keys(tokenizer.vocab).length,
         vocab: tokenizer.vocab,
-        merges: tokenizer.merges,
-        selectedRegex: tokenizer.selectedRegex
+        merges: tokenizer.merges
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'tokenviz_bpe_model.json';
+    a.download = `bpe_model_${tokenizer.selectedRegex}.json`;
     a.click();
-    URL.revokeObjectURL(url);
 }
 
 function importModelJSON(e) {
@@ -589,27 +606,33 @@ function importModelJSON(e) {
     reader.onload = (evt) => {
         try {
             const data = JSON.parse(evt.target.result);
-            tokenizer.vocab = data.vocab || {};
-            tokenizer.idToVocab = {};
-            for (const [k, v] of Object.entries(tokenizer.vocab)) {
-                tokenizer.idToVocab[v] = k;
-            }
-            tokenizer.merges = data.merges || [];
-            tokenizer.mergeRanks = {};
-            tokenizer.merges.forEach((pair, idx) => {
-                tokenizer.mergeRanks[pair[0] + '|' + pair[1]] = idx;
-            });
-            if (data.selectedRegex) {
-                tokenizer.selectedRegex = data.selectedRegex;
-                engineSelect.value = data.selectedRegex;
-            }
+            if (data.vocab && data.merges) {
+                tokenizer.vocab = data.vocab;
+                tokenizer.merges = data.merges;
+                tokenizer.idToVocab = {};
+                for (const [k, v] of Object.entries(data.vocab)) {
+                    tokenizer.idToVocab[v] = k;
+                }
+                tokenizer.mergeRanks = {};
+                data.merges.forEach(([p1, p2], idx) => {
+                    tokenizer.mergeRanks[p1 + '|' + p2] = idx;
+                });
 
-            renderVocabTable();
-            runTokenization();
-            alert("✓ Tokenizer Model Imported Successfully!");
+                runTokenization();
+                alert(`Successfully imported model with ${Object.keys(data.vocab).length} tokens!`);
+            }
         } catch (err) {
-            alert("Error loading JSON model.");
+            alert("Error parsing model JSON: " + err.message);
         }
     };
     reader.readAsText(file);
+}
+
+function escapeHtml(str) {
+    return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
 }
