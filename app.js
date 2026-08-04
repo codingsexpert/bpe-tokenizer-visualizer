@@ -184,7 +184,7 @@ class JSBPETokenizer {
         return mergeLogs;
     }
 
-    encodeChunk(chunkBytes, maxMergeRank = Infinity) {
+    encodeChunk(chunkBytes, maxMergeRank = Infinity, startCharIdx = 0) {
         if (chunkBytes.length === 0) return [];
         let parts = chunkBytes.map(b => String.fromCharCode(b));
 
@@ -209,12 +209,12 @@ class JSBPETokenizer {
             parts.splice(bestIdx + 1, 1);
         }
 
+        let currCharPos = startCharIdx;
         return parts.map(p => {
             const rawBytes = Array.from(p).map(c => c.charCodeAt(0));
             const hex = rawBytes.map(b => b.toString(16).padStart(2, '0').toUpperCase()).join(' ');
             const displayStr = Array.from(p).map(c => byteToUnicode[c.charCodeAt(0)] || c).join('');
             
-            // Assign hash-based unique ID for subwords if not in small custom vocab
             let assignedId = this.vocab[p];
             if (assignedId === undefined) {
                 let h = 5381;
@@ -224,13 +224,18 @@ class JSBPETokenizer {
                 assignedId = Math.abs(h) % 150000 + 256;
             }
 
-            return {
+            const charLen = p.length;
+            const res = {
                 id: assignedId,
                 tokenStr: p,
                 displayStr: displayStr,
                 hex: hex,
-                len: displayStr.length
+                len: displayStr.length,
+                startIdx: currCharPos,
+                endIdx: currCharPos + charLen
             };
+            currCharPos += charLen;
+            return res;
         });
     }
 
@@ -248,9 +253,9 @@ class JSBPETokenizer {
         regex.lastIndex = 0;
         while ((match = regex.exec(text)) !== null) {
             if (match.index > lastIndex) {
-                chunks.push(text.slice(lastIndex, match.index));
+                chunks.push({ str: text.slice(lastIndex, match.index), start: lastIndex });
             }
-            chunks.push(match[0]);
+            chunks.push({ str: match[0], start: match.index });
             lastIndex = regex.lastIndex;
 
             if (match.index === regex.lastIndex) {
@@ -259,21 +264,20 @@ class JSBPETokenizer {
         }
 
         if (lastIndex < text.length) {
-            chunks.push(text.slice(lastIndex));
+            chunks.push({ str: text.slice(lastIndex), start: lastIndex });
         }
 
         const encoder = new TextEncoder();
         let tokens = [];
 
-        for (const chunk of chunks) {
+        for (const item of chunks) {
+            const chunk = item.str;
             if (!chunk) continue;
             const bytes = Array.from(encoder.encode(chunk));
             
-            // If the chunk is a standard pre-tokenized word or subword, encode directly
             if (chunk.length > 1 && this.merges.length > 0) {
-                tokens = tokens.concat(this.encodeChunk(bytes, maxMergeStep));
+                tokens = tokens.concat(this.encodeChunk(bytes, maxMergeStep, item.start));
             } else {
-                // Direct chunk tokenization matching tiktoken subword rules
                 const displayStr = Array.from(chunk).map(c => byteToUnicode[c.charCodeAt(0)] || c).join('');
                 const rawBytes = Array.from(encoder.encode(chunk));
                 const hex = rawBytes.map(b => b.toString(16).padStart(2, '0').toUpperCase()).join(' ');
@@ -289,7 +293,9 @@ class JSBPETokenizer {
                     tokenStr: chunk,
                     displayStr: displayStr,
                     hex: hex,
-                    len: displayStr.length
+                    len: displayStr.length,
+                    startIdx: item.start,
+                    endIdx: item.start + chunk.length
                 });
             }
         }
@@ -321,6 +327,7 @@ const SAMPLES = {
 
 // DOM Elements
 const promptInput = document.getElementById('prompt-input');
+const inlineTokenView = document.getElementById('inline-token-view');
 const tokensBox = document.getElementById('tokens-box');
 const heatmapBox = document.getElementById('heatmap-box');
 const sequenceDisplay = document.getElementById('sequence-display');
@@ -444,17 +451,32 @@ function runTokenization() {
 
     const tokens = tokenizer.encode(text, null, maxMergeStep);
 
-    // Render Subword Badges
     if (tokens.length === 0) {
+        if (inlineTokenView) inlineTokenView.innerHTML = `<span class="placeholder-text">Type text above to see inline token boundaries...</span>`;
         tokensBox.innerHTML = `<span class="placeholder-text">Type text above...</span>`;
         heatmapBox.innerHTML = `<span class="placeholder-text">Type text above to view compression heatmap...</span>`;
         sequenceDisplay.innerText = `[ ]`;
     } else {
-        tokensBox.innerHTML = tokens.map(t => {
+        // Render Interactive Inline Token Text Viewport
+        if (inlineTokenView) {
+            inlineTokenView.innerHTML = tokens.map((t, idx) => {
+                const color = stringToColor(t.displayStr);
+                const formattedText = formatSubword(t.displayStr);
+                return `
+                    <span class="token-inline-span" data-token-idx="${idx}" style="background-color: ${color}" title="Token #${idx + 1} | ID: ${t.id} | Chars: ${t.startIdx}..${t.endIdx}">
+                        <span>${escapeHtml(formattedText)}</span>
+                        <span class="token-inline-idx">#${idx + 1}</span>
+                    </span>
+                `;
+            }).join('');
+        }
+
+        // Render Subword Badges
+        tokensBox.innerHTML = tokens.map((t, idx) => {
             const color = stringToColor(t.displayStr);
             const formattedText = formatSubword(t.displayStr);
             return `
-                <div class="subword-badge" style="background-color: ${color}" title="Token ID: ${t.id} | Bytes: ${t.hex}">
+                <div class="subword-badge" data-token-idx="${idx}" style="background-color: ${color}" title="Token ID: ${t.id} | Chars: ${t.startIdx}..${t.endIdx} | Bytes: ${t.hex}">
                     <span>${escapeHtml(formattedText)}</span>
                     <span class="subword-id">${t.id}</span>
                 </div>
@@ -481,7 +503,7 @@ function runTokenization() {
     const charCount = text.length;
     const tokenCount = tokens.length;
     const ratio = charCount > 0 ? (charCount / (tokenCount || 1)).toFixed(2) : '0.00';
-    const cost = ((tokenCount / 1000000) * 2.50).toFixed(5); // GPT-4o pricing
+    const cost = ((tokenCount / 1000000) * 2.50).toFixed(5);
 
     if (vstatTokens) vstatTokens.innerText = tokenCount;
     if (vstatChars) vstatChars.innerText = charCount;
@@ -506,23 +528,67 @@ function runTokenization() {
     renderTokensTable(tokens);
     renderTree(tokens);
     renderBenchmarkComparison(text);
+    attachSynchronizedHighlightListeners();
+}
+
+function attachSynchronizedHighlightListeners() {
+    const allInlineSpans = document.querySelectorAll('.token-inline-span');
+    const allBadges = document.querySelectorAll('.subword-badge');
+    const allTableRows = document.querySelectorAll('#tokens-table-body tr');
+
+    function highlightIdx(idx) {
+        allInlineSpans.forEach(el => {
+            if (el.dataset.tokenIdx === idx) el.classList.add('token-highlighted');
+            else el.classList.remove('token-highlighted');
+        });
+        allBadges.forEach(el => {
+            if (el.dataset.tokenIdx === idx) el.classList.add('token-highlighted');
+            else el.classList.remove('token-highlighted');
+        });
+        allTableRows.forEach((el, rIdx) => {
+            if (rIdx.toString() === idx) el.classList.add('token-highlighted');
+            else el.classList.remove('token-highlighted');
+        });
+    }
+
+    function clearHighlight() {
+        allInlineSpans.forEach(el => el.classList.remove('token-highlighted'));
+        allBadges.forEach(el => el.classList.remove('token-highlighted'));
+        allTableRows.forEach(el => el.classList.remove('token-highlighted'));
+    }
+
+    allInlineSpans.forEach(span => {
+        span.addEventListener('mouseenter', () => highlightIdx(span.dataset.tokenIdx));
+        span.addEventListener('mouseleave', clearHighlight);
+    });
+
+    allBadges.forEach(badge => {
+        badge.addEventListener('mouseenter', () => highlightIdx(badge.dataset.tokenIdx));
+        badge.addEventListener('mouseleave', clearHighlight);
+    });
+
+    allTableRows.forEach((row, idx) => {
+        row.addEventListener('mouseenter', () => highlightIdx(idx.toString()));
+        row.addEventListener('mouseleave', clearHighlight);
+    });
 }
 
 function renderTokensTable(tokens) {
     if (!tokensTableBody) return;
     if (tokens.length === 0) {
-        tokensTableBody.innerHTML = `<tr><td colspan="4" class="empty-cell">No tokens generated</td></tr>`;
+        tokensTableBody.innerHTML = `<tr><td colspan="5" class="empty-cell">No tokens generated</td></tr>`;
         return;
     }
 
     tokensTableBody.innerHTML = tokens.map((t, idx) => {
         const formattedText = formatSubword(t.displayStr);
         return `
-            <tr>
+            <tr data-token-idx="${idx}">
                 <td>${idx + 1}</td>
                 <td><strong>${t.id}</strong></td>
                 <td><code style="font-family: var(--font-code); color: var(--accent-indigo)">'${escapeHtml(formattedText)}'</code></td>
                 <td><code style="font-family: var(--font-code); color: var(--text-muted)">${t.hex}</code></td>
+                <td><code style="font-family: var(--font-code); font-size: 0.75rem;">${t.startIdx}..${t.endIdx}</code></td>
             </tr>
         `;
     }).join('');

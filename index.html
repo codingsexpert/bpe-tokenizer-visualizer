@@ -24,7 +24,7 @@
                 </div>
                 <div class="brand-meta">
                     <span class="brand-name">TokenViz Studio</span>
-                    <span class="brand-tag">v9.0 Workbench</span>
+                    <span class="brand-tag">v10.0 Interactive</span>
                 </div>
             </div>
 
@@ -67,6 +67,17 @@
                     <!-- Prompt Editor Card -->
                     <div class="chatgpt-input-card">
                         <textarea id="prompt-input" rows="3" placeholder="Type or paste any text to inspect subword tokenization in real time..."></textarea>
+                    </div>
+
+                    <!-- Interactive Synchronized Token Text Overlay Viewport -->
+                    <div class="interactive-overlay-container">
+                        <div class="visualizer-bar">
+                            <span class="visualizer-title">In-Context Synchronized Token Highlight</span>
+                            <span class="hint-text">Hover any token to highlight text boundaries & table row</span>
+                        </div>
+                        <div class="inline-token-view" id="inline-token-view">
+                            <span class="placeholder-text">Type text above to see inline token boundaries...</span>
+                        </div>
                     </div>
 
                     <!-- Subword Token Badges Viewport -->
@@ -132,10 +143,11 @@
                                         <th>ID</th>
                                         <th>Token Representation</th>
                                         <th>UTF-8 Bytes</th>
+                                        <th>Char Range</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tokens-table-body">
-                                    <tr><td colspan="4" class="empty-cell">No tokens generated</td></tr>
+                                    <tr><td colspan="5" class="empty-cell">No tokens generated</td></tr>
                                 </tbody>
                             </table>
                         </div>

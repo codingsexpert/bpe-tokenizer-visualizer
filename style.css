@@ -199,7 +199,7 @@ html, body {
     margin: 0 auto;
 }
 
-/* Hero Section: Centered Prompt & Subword Tokens Viewport */
+/* Hero Section */
 .hero-section {
     width: 100%;
 }
@@ -241,6 +241,62 @@ html, body {
     color: var(--text-primary);
     line-height: 1.5;
     resize: none !important;
+}
+
+/* Interactive Synchronized In-Context Token Viewport */
+.interactive-overlay-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    width: 100%;
+}
+
+.inline-token-view {
+    background: var(--bg-card);
+    backdrop-filter: var(--glass-backdrop);
+    border: 1px solid rgba(124, 58, 237, 0.25);
+    border-radius: var(--radius-md);
+    padding: 1rem 1.25rem;
+    min-height: 80px;
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    gap: 0.25rem;
+    font-family: var(--font-ui);
+    font-size: 1rem;
+    line-height: 1.8;
+    box-shadow: var(--shadow-premium);
+    overflow-y: auto;
+    max-height: 220px;
+}
+
+.token-inline-span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    padding: 0.15rem 0.45rem;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    user-select: none;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+}
+
+.token-inline-span:hover, .token-inline-span.token-highlighted {
+    transform: translateY(-2px) scale(1.04);
+    box-shadow: 0 6px 18px rgba(124, 58, 237, 0.25);
+    outline: 2px solid var(--accent-indigo);
+    z-index: 5;
+}
+
+.token-inline-idx {
+    font-size: 0.65rem;
+    background: rgba(15, 23, 42, 0.1);
+    padding: 0 4px;
+    border-radius: 3px;
+    font-family: var(--font-code);
 }
 
 .visualizer-container, .heatmap-container, .sequence-container {
@@ -325,6 +381,7 @@ html, body {
     overflow-wrap: anywhere;
     position: relative;
     overflow: hidden;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .subword-badge::after {
@@ -335,9 +392,11 @@ html, body {
     pointer-events: none;
 }
 
-.subword-badge:hover {
-    transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 6px 18px rgba(124, 58, 237, 0.2);
+.subword-badge:hover, .subword-badge.token-highlighted {
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 6px 18px rgba(124, 58, 237, 0.25);
+    outline: 2px solid var(--accent-indigo);
+    z-index: 5;
 }
 
 .subword-id {
@@ -479,6 +538,11 @@ html, body {
     position: sticky;
     top: 0;
     z-index: 1;
+}
+
+.data-table tr.token-highlighted {
+    background: rgba(79, 70, 229, 0.12) !important;
+    outline: 1px solid var(--accent-indigo);
 }
 
 .benchmark-list {
