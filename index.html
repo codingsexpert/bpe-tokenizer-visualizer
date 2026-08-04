@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TokenViz - World Class BPE Tokenizer Studio</title>
+    <title>TokenViz - ChatGPT & Claude Style BPE Tokenizer Studio</title>
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -24,7 +24,7 @@
                 </div>
                 <div class="brand-meta">
                     <span class="brand-name">TokenViz Studio</span>
-                    <span class="brand-tag">v4.0 Max</span>
+                    <span class="brand-tag">v4.5 Ultra</span>
                 </div>
             </div>
 
@@ -61,24 +61,33 @@
 
         <!-- Main Studio Grid -->
         <main class="studio-grid">
-            <!-- Left Panel: Text Input & Interactive Token Visualizer -->
+            <!-- Left Panel: ChatGPT / Claude Style Prompt Container -->
             <section class="panel left-panel">
                 <div class="panel-header">
                     <div class="panel-title">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 1-2 2v14a2 2 0 0 1 2 2h14a2 2 0 0 1 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                        <span>Interactive Prompt Editor</span>
-                    </div>
-                    <div class="sample-chips">
-                        <span class="sample-label">Presets:</span>
-                        <button class="chip" data-sample="multilingual">Hindi + English</button>
-                        <button class="chip" data-sample="code">Python Code</button>
-                        <button class="chip" data-sample="deepseek">DeepSeek Prompt</button>
-                        <button class="chip" data-sample="math">Math & Logic</button>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                        <span>Prompt Input</span>
                     </div>
                 </div>
 
-                <div class="editor-container">
-                    <textarea id="prompt-input" placeholder="Type or paste any text to see subword tokenization in real time..."></textarea>
+                <!-- ChatGPT / Claude Style Prompt Box -->
+                <div class="chatgpt-input-card">
+                    <textarea id="prompt-input" rows="3" placeholder="Message TokenViz or paste a prompt to tokenize..."></textarea>
+                    
+                    <div class="chatgpt-action-bar">
+                        <div class="sample-chips">
+                            <button class="chip" data-sample="multilingual">Hindi + English</button>
+                            <button class="chip" data-sample="code">Python Code</button>
+                            <button class="chip" data-sample="deepseek">DeepSeek Prompt</button>
+                        </div>
+
+                        <button id="btn-send-prompt" class="chatgpt-send-btn" title="Tokenize Prompt">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <line x1="12" y1="19" x2="12" y2="5"/>
+                                <polyline points="5 12 12 5 19 12"/>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Subword Token Visualizer Overlay -->
