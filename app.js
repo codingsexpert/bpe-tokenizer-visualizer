@@ -1,5 +1,5 @@
 // =====================================================================
-//  TokenViz Masterpiece Studio - BPE Engine & Benchmark Controller
+//  TokenViz Masterpiece Studio - BPE Engine & Heatmap Controller
 // =====================================================================
 
 const PASTEL_PALETTE = [
@@ -183,11 +183,13 @@ class JSBPETokenizer {
         return parts.map(p => {
             const rawBytes = Array.from(p).map(c => c.charCodeAt(0));
             const hex = rawBytes.map(b => b.toString(16).padStart(2, '0').toUpperCase()).join(' ');
+            const displayStr = Array.from(p).map(c => byteToUnicode[c.charCodeAt(0)] || c).join('');
             return {
                 id: this.vocab[p] !== undefined ? this.vocab[p] : 0,
                 tokenStr: p,
-                displayStr: Array.from(p).map(c => byteToUnicode[c.charCodeAt(0)] || c).join(''),
-                hex: hex
+                displayStr: displayStr,
+                hex: hex,
+                len: displayStr.length
             };
         });
     }
@@ -220,6 +222,7 @@ const SAMPLES = {
 // DOM Elements
 const promptInput = document.getElementById('prompt-input');
 const tokensBox = document.getElementById('tokens-box');
+const heatmapBox = document.getElementById('heatmap-box');
 const sequenceDisplay = document.getElementById('sequence-display');
 
 const vstatTokens = document.getElementById('vstat-tokens');
@@ -231,6 +234,7 @@ const btnCopyIds = document.getElementById('btn-copy-ids');
 
 const tokensTableBody = document.getElementById('tokens-table-body');
 const benchmarkList = document.getElementById('benchmark-list');
+const treeContainer = document.getElementById('tree-container');
 
 const mTokens = document.getElementById('m-tokens');
 const mChars = document.getElementById('m-chars');
@@ -366,8 +370,10 @@ function runTokenization() {
 
     if (tokens.length === 0) {
         tokensBox.innerHTML = `<span class="placeholder-text">Type text above...</span>`;
+        heatmapBox.innerHTML = `<span class="placeholder-text">Type text above...</span>`;
         sequenceDisplay.innerText = '[ ]';
         tokensTableBody.innerHTML = `<tr><td colspan="4" class="empty-cell">No tokens generated</td></tr>`;
+        treeContainer.innerHTML = `<span class="placeholder-text">No merges active</span>`;
         return;
     }
 
@@ -387,6 +393,21 @@ function runTokenization() {
         `;
     }).join('');
 
+    // Render Compression Heatmap (Green = High Compression, Amber/Red = Low)
+    heatmapBox.innerHTML = tokens.map(tok => {
+        const charLen = tok.len || 1;
+        let heatColor = '#fee2e2'; // Low compression (1 char)
+        if (charLen >= 4) heatColor = '#dcfce7';      // High compression (4+ chars)
+        else if (charLen >= 2) heatColor = '#fef9c3'; // Medium compression
+
+        const safeText = tok.displayStr.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        return `
+            <span class="heatmap-pill" style="background-color: ${heatColor}" title="${charLen} chars in token">
+                ${safeText === ' ' ? '␣' : safeText}
+            </span>
+        `;
+    }).join('');
+
     sequenceDisplay.innerText = `[ ${tokens.map(t => t.id).join(', ')} ]`;
 
     // Render Tokens Table
@@ -398,6 +419,9 @@ function runTokenization() {
             <td style="color: var(--text-muted); font-size:0.78rem;">${tok.hex}</td>
         </tr>
     `).join('');
+
+    // Render Merge Tree Hierarchy
+    renderMergeTree();
 
     // Click Badge -> Highlight Table Row
     document.querySelectorAll('.subword-badge').forEach(chip => {
@@ -411,6 +435,25 @@ function runTokenization() {
             }
         });
     });
+}
+
+function renderMergeTree() {
+    if (tokenizer.merges.length === 0) {
+        treeContainer.innerHTML = `<span class="placeholder-text">Base Byte Tokens (No merges learned yet)</span>`;
+        return;
+    }
+
+    treeContainer.innerHTML = tokenizer.merges.slice(0, 15).map(([p1, p2], idx) => {
+        const p1Str = Array.from(p1).map(c => byteToUnicode[c.charCodeAt(0)] || c).join('');
+        const p2Str = Array.from(p2).map(c => byteToUnicode[c.charCodeAt(0)] || c).join('');
+        const mergedStr = p1Str + p2Str;
+        return `
+            <div class="tree-node">
+                <span>Rank #${idx + 1}: ('${p1Str}' + '${p2Str}')</span>
+                <strong style="color: var(--accent-indigo)">➔ '${mergedStr}'</strong>
+            </div>
+        `;
+    }).join('');
 }
 
 function renderBenchmarkComparison(text) {
