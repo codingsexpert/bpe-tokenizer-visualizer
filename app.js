@@ -3,14 +3,14 @@
 // =====================================================================
 
 const TOKEN_COLOR_PALETTE = [
-    { bg: 'rgba(99, 102, 241, 0.22)', border: 'rgba(99, 102, 241, 0.4)', text: '#1e1b4b' },
-    { bg: 'rgba(236, 72, 153, 0.22)', border: 'rgba(236, 72, 153, 0.4)', text: '#831843' },
-    { bg: 'rgba(34, 197, 94, 0.22)', border: 'rgba(34, 197, 94, 0.4)', text: '#064e3b' },
-    { bg: 'rgba(245, 158, 11, 0.22)', border: 'rgba(245, 158, 11, 0.4)', text: '#78350f' },
-    { bg: 'rgba(168, 85, 247, 0.22)', border: 'rgba(168, 85, 247, 0.4)', text: '#581c87' },
-    { bg: 'rgba(6, 182, 212, 0.22)', border: 'rgba(6, 182, 212, 0.4)', text: '#164e63' },
-    { bg: 'rgba(234, 88, 12, 0.22)', border: 'rgba(234, 88, 12, 0.4)', text: '#7c2d12' },
-    { bg: 'rgba(16, 185, 129, 0.22)', border: 'rgba(16, 185, 129, 0.4)', text: '#064e3b' }
+    { bg: 'rgba(99, 102, 241, 0.16)', border: 'rgba(99, 102, 241, 0.35)', text: '#1e1b4b' },
+    { bg: 'rgba(236, 72, 153, 0.16)', border: 'rgba(236, 72, 153, 0.35)', text: '#831843' },
+    { bg: 'rgba(34, 197, 94, 0.16)', border: 'rgba(34, 197, 94, 0.35)', text: '#064e3b' },
+    { bg: 'rgba(245, 158, 11, 0.16)', border: 'rgba(245, 158, 11, 0.35)', text: '#78350f' },
+    { bg: 'rgba(168, 85, 247, 0.16)', border: 'rgba(168, 85, 247, 0.35)', text: '#581c87' },
+    { bg: 'rgba(6, 182, 212, 0.16)', border: 'rgba(6, 182, 212, 0.35)', text: '#164e63' },
+    { bg: 'rgba(234, 88, 12, 0.16)', border: 'rgba(234, 88, 12, 0.35)', text: '#7c2d12' },
+    { bg: 'rgba(16, 185, 129, 0.16)', border: 'rgba(16, 185, 129, 0.35)', text: '#064e3b' }
 ];
 
 function getTokenColor(idx) {
@@ -447,25 +447,26 @@ function runTokenization() {
     const tokens = tokenizer.encode(text, null, maxMergeStep);
 
     if (tokens.length === 0) {
-        if (inlineTokenView) inlineTokenView.innerHTML = `<span class="placeholder-text">Type text above to see realistic subword tokenization...</span>`;
+        if (inlineTokenView) inlineTokenView.innerHTML = `<span class="placeholder-text">Type text above to see subword token stream...</span>`;
         tokensBox.innerHTML = `<span class="placeholder-text">Type text above...</span>`;
         heatmapBox.innerHTML = `<span class="placeholder-text">Type text above to view compression heatmap...</span>`;
         sequenceDisplay.innerText = `[ ]`;
     } else {
-        // Render Realistic Marker-Style In-Text Token Stream (OpenAI Playground & Claude Style)
+        // Render Hand-Crafted Premium Subword Token Pills with Micro Token ID Pills
         if (inlineTokenView) {
             inlineTokenView.innerHTML = tokens.map((t, idx) => {
                 const palette = getTokenColor(idx);
                 const formattedText = formatSubword(t.displayStr);
                 return `
                     <span class="token-inline-span" data-token-idx="${idx}" style="background-color: ${palette.bg}; border-color: ${palette.border}; color: ${palette.text}" title="Token #${idx + 1}&#10;Token ID: ${t.id}&#10;Subword: '${formattedText}'&#10;Char Pos: ${t.startIdx}..${t.endIdx}&#10;Hex: ${t.hex}">
-                        ${escapeHtml(t.displayStr)}
+                        <span>${escapeHtml(formattedText)}</span>
+                        <span class="token-inline-id">${t.id}</span>
                     </span>
                 `;
             }).join('');
         }
 
-        // Render Clean Subword Cards in Inspector
+        // Render Subword Cards in Inspector
         tokensBox.innerHTML = tokens.map((t, idx) => {
             const palette = getTokenColor(idx);
             const formattedText = formatSubword(t.displayStr);

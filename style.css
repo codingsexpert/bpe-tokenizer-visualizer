@@ -1,6 +1,6 @@
 :root {
     --bg-page: #f8fafc;
-    --bg-card: rgba(255, 255, 255, 0.94);
+    --bg-card: rgba(255, 255, 255, 0.95);
     --bg-input: rgba(241, 245, 249, 0.85);
     --border-glass: rgba(255, 255, 255, 0.9);
     --border-color: rgba(226, 232, 240, 0.85);
@@ -243,54 +243,72 @@ html, body {
     resize: none !important;
 }
 
-/* Realistic OpenAI / Claude Style Marker Text Highlight Viewport */
+/* Ultra-Premium Interactive Subword Token Stream Studio Card */
 .interactive-overlay-container {
     display: flex;
     flex-direction: column;
-    gap: 0.45rem;
+    gap: 0.55rem;
     width: 100%;
+}
+
+.bar-left {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    color: var(--accent-indigo);
 }
 
 .inline-token-view {
     background: var(--bg-card);
     backdrop-filter: var(--glass-backdrop);
-    border: 1px solid rgba(124, 58, 237, 0.25);
+    border: 1px solid rgba(124, 58, 237, 0.28);
     border-radius: var(--radius-md);
-    padding: 1rem 1.25rem;
-    min-height: 85px;
+    padding: 1.1rem 1.25rem;
+    min-height: 90px;
     display: flex;
     flex-wrap: wrap;
     align-content: flex-start;
-    gap: 2px;
-    font-family: var(--font-ui);
-    font-size: 1.1rem;
-    line-height: 2.1;
+    gap: 0.45rem;
+    font-family: var(--font-code);
+    font-size: 0.95rem;
+    line-height: 1.9;
     box-shadow: var(--shadow-premium);
     overflow-y: auto;
-    max-height: 240px;
-    white-space: pre-wrap;
-    word-break: break-word;
+    max-height: 250px;
 }
 
-/* Marker-Style Highlight Span */
+/* Premium Token Pill Badge */
 .token-inline-span {
-    display: inline-block;
-    padding: 0.1rem 0.35rem;
-    border-radius: 4px;
-    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.28rem 0.65rem;
+    border-radius: 8px;
+    font-family: var(--font-code);
+    font-weight: 600;
+    font-size: 0.92rem;
+    border: 1px solid rgba(0, 0, 0, 0.1);
     cursor: pointer;
     user-select: none;
-    transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     position: relative;
-    margin: 1px 0;
 }
 
 .token-inline-span:hover, .token-inline-span.token-highlighted {
     transform: translateY(-2px) scale(1.04);
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 8px 20px rgba(124, 58, 237, 0.25);
     outline: 2px solid var(--accent-indigo);
     z-index: 10;
-    font-weight: 700;
+}
+
+.token-inline-id {
+    font-size: 0.72rem;
+    background: rgba(15, 23, 42, 0.1);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-family: var(--font-code);
 }
 
 .visualizer-container, .heatmap-container, .sequence-container {
