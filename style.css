@@ -1,15 +1,20 @@
 :root {
-    --bg-dark: #0f172a;
-    --card-bg: rgba(30, 41, 59, 0.7);
-    --card-border: rgba(255, 255, 255, 0.08);
-    --text-main: #f8fafc;
-    --text-muted: #94a3b8;
-    --accent-blue: #38bdf8;
-    --accent-indigo: #818cf8;
-    --accent-purple: #c084fc;
-    --accent-emerald: #34d399;
-    --accent-rose: #fb7185;
-    --primary-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    --bg-light: #f8fafc;
+    --card-bg: #ffffff;
+    --card-border: #e2e8f0;
+    --text-primary: #0f172a;
+    --text-secondary: #334155;
+    --text-muted: #64748b;
+    --accent-indigo: #4f46e5;
+    --accent-indigo-hover: #4338ca;
+    --accent-purple: #7c3aed;
+    --accent-emerald: #059669;
+    --accent-blue: #0284c7;
+    --accent-rose: #e11d48;
+    --primary-gradient: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    --card-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.03);
+    --input-bg: #f8fafc;
+    --input-border: #cbd5e1;
     --radius-lg: 16px;
     --radius-md: 10px;
     --radius-sm: 6px;
@@ -24,11 +29,11 @@
 }
 
 body {
-    background-color: var(--bg-dark);
+    background-color: var(--bg-light);
     background-image: 
-        radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
-        radial-gradient(at 100% 100%, rgba(192, 132, 252, 0.12) 0px, transparent 50%);
-    color: var(--text-main);
+        radial-gradient(at 0% 0%, rgba(79, 70, 229, 0.05) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(124, 58, 237, 0.05) 0px, transparent 50%);
+    color: var(--text-primary);
     font-family: var(--font-sans);
     min-height: 100vh;
     padding: 2rem;
@@ -50,9 +55,9 @@ body {
     align-items: center;
     background: var(--card-bg);
     border: 1px solid var(--card-border);
-    backdrop-filter: blur(12px);
     padding: 1.25rem 2rem;
     border-radius: var(--radius-lg);
+    box-shadow: var(--card-shadow);
     flex-wrap: wrap;
     gap: 1rem;
 }
@@ -64,32 +69,35 @@ body {
 }
 
 .logo-icon {
-    font-size: 2rem;
+    font-size: 1.8rem;
     background: var(--primary-gradient);
-    width: 50px;
-    height: 50px;
+    color: white;
+    width: 48px;
+    height: 48px;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
+    box-shadow: 0 4px 14px rgba(79, 70, 229, 0.25);
 }
 
 h1 {
     font-size: 1.5rem;
     font-weight: 700;
+    color: var(--text-primary);
     letter-spacing: -0.02em;
 }
 
 .subtitle {
     color: var(--text-muted);
     font-size: 0.875rem;
+    font-weight: 400;
 }
 
 .preset-badges {
     display: flex;
-    gap: 0.5rem;
-    background: rgba(15, 23, 42, 0.6);
+    gap: 0.4rem;
+    background: var(--input-bg);
     padding: 4px;
     border-radius: var(--radius-md);
     border: 1px solid var(--card-border);
@@ -109,13 +117,14 @@ h1 {
 }
 
 .preset-btn:hover {
-    color: var(--text-main);
+    color: var(--text-primary);
 }
 
 .preset-btn.active {
-    background: var(--primary-gradient);
-    color: white;
-    box-shadow: 0 2px 10px rgba(99, 102, 241, 0.4);
+    background: var(--card-bg);
+    color: var(--accent-indigo);
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
 }
 
 /* Stats Section */
@@ -128,29 +137,31 @@ h1 {
 .stat-card {
     background: var(--card-bg);
     border: 1px solid var(--card-border);
-    backdrop-filter: blur(12px);
     padding: 1.25rem;
     border-radius: var(--radius-lg);
+    box-shadow: var(--card-shadow);
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
 }
 
 .stat-label {
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.05em;
+    font-weight: 600;
 }
 
 .stat-value {
     font-size: 1.75rem;
     font-weight: 700;
+    color: var(--text-primary);
     font-family: var(--font-mono);
 }
 
 .stat-value.accent {
-    color: var(--accent-blue);
+    color: var(--accent-indigo);
 }
 
 /* Main Grid Layout */
@@ -169,8 +180,8 @@ h1 {
 .panel-card {
     background: var(--card-bg);
     border: 1px solid var(--card-border);
-    backdrop-filter: blur(12px);
     border-radius: var(--radius-lg);
+    box-shadow: var(--card-shadow);
     padding: 1.5rem;
     display: flex;
     flex-direction: column;
@@ -188,10 +199,11 @@ h1 {
 .card-header h2 {
     font-size: 1.15rem;
     font-weight: 600;
+    color: var(--text-primary);
 }
 
 .badge {
-    background: rgba(52, 211, 153, 0.15);
+    background: rgba(5, 150, 105, 0.1);
     color: var(--accent-emerald);
     padding: 0.25rem 0.75rem;
     border-radius: 20px;
@@ -217,26 +229,27 @@ h1 {
 
 label {
     font-size: 0.85rem;
-    font-weight: 500;
-    color: var(--text-muted);
+    font-weight: 600;
+    color: var(--text-secondary);
 }
 
 textarea, input[type="number"], input[type="text"] {
-    background: rgba(15, 23, 42, 0.7);
-    border: 1px solid var(--card-border);
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
     border-radius: var(--radius-md);
-    color: var(--text-main);
+    color: var(--text-primary);
     padding: 0.75rem 1rem;
     font-family: var(--font-mono);
     font-size: 0.9rem;
     outline: none;
-    transition: border-color 0.2s;
+    transition: all 0.2s ease;
     width: 100%;
 }
 
 textarea:focus, input:focus {
+    background: #ffffff;
     border-color: var(--accent-indigo);
-    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
 }
 
 .primary-btn {
@@ -254,12 +267,12 @@ textarea:focus, input:focus {
     align-items: center;
     gap: 0.5rem;
     transition: transform 0.15s ease, box-shadow 0.15s ease;
-    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+    box-shadow: 0 4px 14px rgba(79, 70, 229, 0.3);
 }
 
 .primary-btn:hover {
     transform: translateY(-1px);
-    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+    box-shadow: 0 6px 20px rgba(79, 70, 229, 0.4);
 }
 
 .primary-btn:active {
@@ -271,16 +284,16 @@ textarea:focus, input:focus {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-
 }
 
 .merges-log-section h3 {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     color: var(--text-muted);
+    font-weight: 600;
 }
 
 .merges-list {
-    background: rgba(15, 23, 42, 0.7);
+    background: var(--input-bg);
     border: 1px solid var(--card-border);
     border-radius: var(--radius-md);
     max-height: 180px;
@@ -290,20 +303,23 @@ textarea:focus, input:focus {
     flex-direction: column;
     gap: 0.35rem;
     font-family: var(--font-mono);
-    font-size: 0.8rem;
+    font-size: 0.82rem;
 }
 
 .merge-item {
-    padding: 0.4rem 0.6rem;
-    background: rgba(255, 255, 255, 0.03);
+    padding: 0.45rem 0.75rem;
+    background: #ffffff;
+    border: 1px solid var(--card-border);
     border-radius: var(--radius-sm);
     display: flex;
     justify-content: space-between;
     align-items: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
 }
 
 .merge-pair {
-    color: var(--accent-blue);
+    color: var(--accent-indigo);
+    font-weight: 500;
 }
 
 .merge-result {
@@ -338,8 +354,8 @@ textarea:focus, input:focus {
 }
 
 .token-pills-container {
-    background: rgba(15, 23, 42, 0.8);
-    border: 1px solid var(--card-border);
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
     border-radius: var(--radius-md);
     padding: 1rem;
     min-height: 110px;
@@ -349,45 +365,46 @@ textarea:focus, input:focus {
     align-content: flex-start;
 }
 
-/* Individual Token Pill */
+/* Individual Token Pill (Light Theme Vibrant Cards) */
 .token-pill {
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
-    padding: 0.35rem 0.6rem;
+    padding: 0.4rem 0.7rem;
     border-radius: var(--radius-sm);
     font-family: var(--font-mono);
-    font-size: 0.85rem;
-    font-weight: 500;
-    color: #1e293b;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #0f172a;
+    border: 1px solid rgba(0, 0, 0, 0.08);
     cursor: pointer;
     transition: transform 0.15s ease, box-shadow 0.15s ease;
     user-select: none;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
 }
 
 .token-pill:hover {
-    transform: translateY(-2px) scale(1.03);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    transform: translateY(-2px) scale(1.04);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
     z-index: 2;
 }
 
 .token-id-tag {
-    font-size: 0.7rem;
-    background: rgba(0, 0, 0, 0.25);
-    color: rgba(255, 255, 255, 0.9);
-    padding: 1px 5px;
+    font-size: 0.72rem;
+    background: rgba(15, 23, 42, 0.12);
+    color: #0f172a;
+    padding: 1px 6px;
     border-radius: 4px;
-    font-weight: 600;
+    font-weight: 700;
 }
 
 .ids-box, .decoded-box {
-    background: rgba(15, 23, 42, 0.8);
-    border: 1px solid var(--card-border);
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
     border-radius: var(--radius-md);
     padding: 0.75rem 1rem;
     font-family: var(--font-mono);
-    font-size: 0.85rem;
+    font-size: 0.88rem;
     color: var(--accent-indigo);
     word-break: break-all;
     min-height: 42px;
@@ -395,6 +412,7 @@ textarea:focus, input:focus {
 
 .decoded-box {
     color: var(--accent-emerald);
+    font-weight: 500;
 }
 
 .status-pass {
@@ -404,18 +422,21 @@ textarea:focus, input:focus {
 }
 
 .icon-btn {
-    background: transparent;
-    border: 1px solid var(--card-border);
-    color: var(--text-muted);
+    background: #ffffff;
+    border: 1px solid var(--input-border);
+    color: var(--text-secondary);
     border-radius: var(--radius-sm);
-    padding: 0.25rem 0.6rem;
-    font-size: 0.75rem;
+    padding: 0.25rem 0.65rem;
+    font-size: 0.78rem;
+    font-weight: 500;
     cursor: pointer;
+    transition: all 0.15s ease;
 }
 
 .icon-btn:hover {
-    color: var(--text-main);
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--input-bg);
+    color: var(--accent-indigo);
+    border-color: var(--accent-indigo);
 }
 
 /* Vocab Table */
@@ -449,8 +470,8 @@ textarea:focus, input:focus {
 }
 
 .vocab-table th {
-    background: rgba(15, 23, 42, 0.9);
-    color: var(--text-muted);
+    background: var(--input-bg);
+    color: var(--text-secondary);
     font-weight: 600;
     position: sticky;
     top: 0;
@@ -458,7 +479,7 @@ textarea:focus, input:focus {
 }
 
 .vocab-table tr:hover {
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(79, 70, 229, 0.02);
 }
 
 /* Spinner */
