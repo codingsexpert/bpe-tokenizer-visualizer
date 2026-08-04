@@ -19,7 +19,7 @@ function stringToColor(str) {
 
 function getBytesToUnicode() {
     const bs = [];
-    for (let i = '!'.charCodeAt(0); i <= '~'.charCodeAt(0); i++) bs.push(i);
+    for (let i = ' '.charCodeAt(0); i <= '~'.charCodeAt(0); i++) bs.push(i);
     for (let i = '¡'.charCodeAt(0); i <= '¬'.charCodeAt(0); i++) bs.push(i);
     for (let i = '®'.charCodeAt(0); i <= 'ÿ'.charCodeAt(0); i++) bs.push(i);
 
@@ -426,17 +426,23 @@ function runTokenization() {
         return;
     }
 
-    // Render Subword Badges
-    tokensBox.innerHTML = tokens.map((tok, idx) => {
-        const bgColor = stringToColor(tok.displayStr);
-        const safeText = tok.displayStr
+    // Format string helper to replace spaces with visible space glyph ␣
+    const formatSubword = (str) => {
+        return str
+            .replace(/ /g, '␣')
             .replace(/&/g, "&amp;")
             .replace(/</g, "&lt;")
             .replace(/>/g, "&gt;");
+    };
+
+    // Render Subword Badges
+    tokensBox.innerHTML = tokens.map((tok, idx) => {
+        const bgColor = stringToColor(tok.displayStr);
+        const safeText = formatSubword(tok.displayStr);
 
         return `
             <div class="subword-badge" style="background-color: ${bgColor}" data-index="${idx}">
-                <span>${safeText === ' ' ? '␣' : safeText}</span>
+                <span>${safeText}</span>
                 <span class="subword-id">${tok.id}</span>
             </div>
         `;
@@ -449,10 +455,10 @@ function runTokenization() {
         if (charLen >= 4) heatColor = '#dcfce7';      // High compression
         else if (charLen >= 2) heatColor = '#fef9c3'; // Medium compression
 
-        const safeText = tok.displayStr.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        const safeText = formatSubword(tok.displayStr);
         return `
             <span class="heatmap-pill" style="background-color: ${heatColor}" title="${charLen} chars in token">
-                ${safeText === ' ' ? '␣' : safeText}
+                ${safeText}
             </span>
         `;
     }).join('');
@@ -464,7 +470,7 @@ function runTokenization() {
         <tr id="token-row-${idx}">
             <td style="color: var(--text-muted)">#${idx + 1}</td>
             <td style="color: var(--accent-indigo); font-weight:700;">${tok.id}</td>
-            <td style="font-weight:600;">'${tok.displayStr}'</td>
+            <td style="font-weight:600;">'${formatSubword(tok.displayStr)}'</td>
             <td style="color: var(--text-muted); font-size:0.78rem;">${tok.hex}</td>
         </tr>
     `).join('');
