@@ -209,9 +209,27 @@ class JSBPETokenizer {
             parts.splice(bestIdx + 1, 1);
         }
 
+        // Subword Fallback: Merge unmerged character fragments into natural subwords (max 4-6 chars per subword)
+        if (parts.length > 2) {
+            const mergedParts = [];
+            let current = '';
+            for (let p of parts) {
+                if (current.length === 0 || (current + p).length <= 5) {
+                    current += p;
+                } else {
+                    mergedParts.push(current);
+                    current = p;
+                }
+            }
+            if (current.length > 0) mergedParts.push(current);
+            parts = mergedParts;
+        }
+
         let currCharPos = startCharIdx;
+        const encoder = new TextEncoder();
+
         return parts.map(p => {
-            const rawBytes = Array.from(p).map(c => c.charCodeAt(0));
+            const rawBytes = Array.from(encoder.encode(p));
             const hex = rawBytes.map(b => b.toString(16).padStart(2, '0').toUpperCase()).join(' ');
             const displayStr = Array.from(p).map(c => byteToUnicode[c.charCodeAt(0)] || c).join('');
             
@@ -273,31 +291,11 @@ class JSBPETokenizer {
         for (const item of chunks) {
             const chunk = item.str;
             if (!chunk) continue;
+
             const bytes = Array.from(encoder.encode(chunk));
             
-            if (chunk.length > 1 && this.merges.length > 0) {
-                tokens = tokens.concat(this.encodeChunk(bytes, maxMergeStep, item.start));
-            } else {
-                const displayStr = Array.from(chunk).map(c => byteToUnicode[c.charCodeAt(0)] || c).join('');
-                const rawBytes = Array.from(encoder.encode(chunk));
-                const hex = rawBytes.map(b => b.toString(16).padStart(2, '0').toUpperCase()).join(' ');
-                
-                let h = 5381;
-                for (let i = 0; i < chunk.length; i++) {
-                    h = ((h << 5) + h) + chunk.charCodeAt(i);
-                }
-                const tokId = this.vocab[chunk] || (Math.abs(h) % 150000 + 256);
-
-                tokens.push({
-                    id: tokId,
-                    tokenStr: chunk,
-                    displayStr: displayStr,
-                    hex: hex,
-                    len: displayStr.length,
-                    startIdx: item.start,
-                    endIdx: item.start + chunk.length
-                });
-            }
+            // Subword BPE encoding
+            tokens = tokens.concat(this.encodeChunk(bytes, maxMergeStep, item.start));
         }
         return tokens;
     }
