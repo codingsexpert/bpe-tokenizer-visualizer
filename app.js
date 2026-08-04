@@ -1,5 +1,5 @@
 // =====================================================================
-//  Byte-Level BPE Tokenizer Pro Engine
+//  Byte-Level BPE Tokenizer - Clean 2-Tab Application Controller
 // =====================================================================
 
 const PASTEL_PALETTE = [
@@ -33,13 +33,10 @@ function getBytesToUnicode() {
         }
     }
     const byteToUnicode = {};
-    const unicodeToByte = {};
     for (let i = 0; i < bs.length; i++) {
-        const char = String.fromCharCode(cs[i]);
-        byteToUnicode[bs[i]] = char;
-        unicodeToByte[char] = bs[i];
+        byteToUnicode[bs[i]] = String.fromCharCode(cs[i]);
     }
-    return { byteToUnicode, unicodeToByte };
+    return { byteToUnicode };
 }
 
 const { byteToUnicode } = getBytesToUnicode();
@@ -203,70 +200,75 @@ class JSBPETokenizer {
     }
 }
 
-// Global App Instance
+// Controller
 const tokenizer = new JSBPETokenizer();
-let isPlaying = false;
-let playInterval = null;
+
+const SAMPLES = {
+    multilingual: "Hello world! Don't worry, BPE tokenization is 100% working. नमस्ते दुनिया! Python BPE tokenizer is super fast.",
+    english: "low low low low low lower lower newest newest newest",
+    code: "function tokenize(x) { return x.split('').map(c => c.charCodeAt(0)); }"
+};
 
 // DOM Elements
-const trainTextEl = document.getElementById('train-text');
-const targetVocabEl = document.getElementById('target-vocab');
-const maxMergesEl = document.getElementById('max-merges');
-const btnTrain = document.getElementById('btn-train');
-const mergesListEl = document.getElementById('merges-list');
-const mergesCountEl = document.getElementById('merges-count');
-
 const testTextEl = document.getElementById('test-text');
 const tokenPillsEl = document.getElementById('token-pills');
 const tokenIdsOutputEl = document.getElementById('token-ids-output');
-const showIdsToggle = document.getElementById('show-ids-toggle');
+const statTokensEl = document.getElementById('stat-tokens');
+const statCharsEl = document.getElementById('stat-chars');
 const btnCopyIds = document.getElementById('btn-copy-ids');
 
-const statCharsEl = document.getElementById('stat-chars');
-const statTokensEl = document.getElementById('stat-tokens');
-const statRatioEl = document.getElementById('stat-ratio');
-
+const trainTextEl = document.getElementById('train-text');
+const targetVocabEl = document.getElementById('target-vocab');
 const modelRegexSelect = document.getElementById('model-regex-select');
+const btnTrain = document.getElementById('btn-train');
 const mergeStepSlider = document.getElementById('merge-step-slider');
 const currentStepLabel = document.getElementById('current-step-label');
-const btnPlayPause = document.getElementById('btn-play-pause');
-
-const charTokenCountEl = document.getElementById('char-token-count');
-const wordTokenCountEl = document.getElementById('word-token-count');
-const bpeTokenCountEl = document.getElementById('bpe-token-count');
-const estCostEl = document.getElementById('est-cost');
-const contextPctEl = document.getElementById('context-pct');
-const contextProgressBar = document.getElementById('context-progress-bar');
-
-const btnExportModel = document.getElementById('btn-export-model');
-const btnImportModel = document.getElementById('btn-import-model');
+const mergesListEl = document.getElementById('merges-list');
+const mergesCountEl = document.getElementById('merges-count');
 
 const vocabTableBody = document.getElementById('vocab-table-body');
 const vocabSearchEl = document.getElementById('vocab-search');
 
 document.addEventListener('DOMContentLoaded', () => {
-    trainTextEl.value = `Hello world! Don't worry, BPE tokenization is 100% working. नमस्ते दुनिया! Python BPE tokenizer is super fast and clean. low lower lowest newest newer.`;
-    testTextEl.value = "Hello world! Don't worry, नमस्ते दुनिया!";
-
-    targetVocabEl.addEventListener('input', () => {
-        const val = parseInt(targetVocabEl.value) || 300;
-        maxMergesEl.value = Math.max(0, val - 256);
+    // Tab Navigation
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            e.target.classList.add('active');
+            const tabId = e.target.dataset.tab;
+            document.getElementById(tabId).classList.add('active');
+        });
     });
 
+    // Preset Links
+    document.querySelectorAll('.link-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const key = e.target.dataset.sample;
+            testTextEl.value = SAMPLES[key];
+            runTokenization();
+        });
+    });
+
+    // Inputs
+    testTextEl.value = SAMPLES.multilingual;
+    trainTextEl.value = SAMPLES.multilingual;
+
+    testTextEl.addEventListener('input', runTokenization);
+    btnTrain.addEventListener('click', runTraining);
     modelRegexSelect.addEventListener('change', (e) => {
         tokenizer.selectedRegex = e.target.value;
         runTraining();
     });
 
     mergeStepSlider.addEventListener('input', () => {
-        updateStepLabel();
+        const val = parseInt(mergeStepSlider.value);
+        const max = parseInt(mergeStepSlider.max);
+        currentStepLabel.innerText = val === max ? `Step ${val} (Max)` : `Step ${val}/${max}`;
         runTokenization();
     });
 
-    btnPlayPause.addEventListener('click', togglePlayPause);
-    btnTrain.addEventListener('click', runTraining);
-    testTextEl.addEventListener('input', runTokenization);
-    showIdsToggle.addEventListener('change', runTokenization);
     vocabSearchEl.addEventListener('input', renderVocabTable);
 
     btnCopyIds.addEventListener('click', () => {
@@ -275,10 +277,6 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => btnCopyIds.innerText = "Copy IDs", 1500);
     });
 
-    btnExportModel.addEventListener('click', exportModel);
-    btnImportModel.addEventListener('change', importModel);
-
-    maxMergesEl.value = parseInt(targetVocabEl.value) - 256;
     runTraining();
 });
 
@@ -286,49 +284,14 @@ function runTraining() {
     const text = trainTextEl.value;
     const targetVocab = parseInt(targetVocabEl.value) || 300;
     const mergeLogs = tokenizer.train(text, targetVocab);
-    
-    // Update Slider Bounds
-    const maxMerges = mergeLogs.length;
-    mergeStepSlider.max = maxMerges;
-    mergeStepSlider.value = maxMerges;
-    updateStepLabel();
+
+    mergeStepSlider.max = mergeLogs.length;
+    mergeStepSlider.value = mergeLogs.length;
+    currentStepLabel.innerText = `Step ${mergeLogs.length} (Max)`;
 
     renderMerges(mergeLogs);
     renderVocabTable();
     runTokenization();
-}
-
-function updateStepLabel() {
-    const val = parseInt(mergeStepSlider.value);
-    const max = parseInt(mergeStepSlider.max);
-    currentStepLabel.innerText = val === max ? `Step ${val} (Max)` : `Step ${val}/${max}`;
-}
-
-function togglePlayPause() {
-    if (isPlaying) {
-        clearInterval(playInterval);
-        isPlaying = false;
-        btnPlayPause.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>`;
-    } else {
-        isPlaying = true;
-        btnPlayPause.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`;
-        
-        if (parseInt(mergeStepSlider.value) >= parseInt(mergeStepSlider.max)) {
-            mergeStepSlider.value = 0;
-        }
-
-        playInterval = setInterval(() => {
-            let curr = parseInt(mergeStepSlider.value);
-            let max = parseInt(mergeStepSlider.max);
-            if (curr < max) {
-                mergeStepSlider.value = curr + 1;
-                updateStepLabel();
-                runTokenization();
-            } else {
-                togglePlayPause();
-            }
-        }, 300);
-    }
 }
 
 function runTokenization() {
@@ -338,33 +301,9 @@ function runTokenization() {
 
     const tokens = tokenizer.encode(text, maxStep);
 
-    // Stats
     statCharsEl.innerText = text.length;
     statTokensEl.innerText = tokens.length;
-    const ratio = tokens.length > 0 ? (text.length / tokens.length).toFixed(1) : '0.0';
-    statRatioEl.innerText = ratio;
 
-    // Analytics Calculation
-    const encoder = new TextEncoder();
-    const charTokensCount = Array.from(encoder.encode(text)).length;
-    const wordTokensCount = text.trim() ? text.trim().split(/\s+/).length : 0;
-    const bpeTokensCount = tokens.length;
-
-    charTokenCountEl.innerText = charTokensCount;
-    wordTokenCountEl.innerText = wordTokensCount;
-    bpeTokenCountEl.innerText = bpeTokensCount;
-
-    // Est GPT-4o cost ($0.0025 per 1000 tokens)
-    const cost = (bpeTokensCount / 1000) * 0.0025;
-    estCostEl.innerText = `$${cost.toFixed(5)}`;
-
-    // 128k Context Window usage %
-    const contextPct = ((bpeTokensCount / 128000) * 100).toFixed(3);
-    contextPctEl.innerText = `${contextPct}%`;
-    contextProgressBar.style.width = `${Math.min(100, Math.max(0.5, parseFloat(contextPct)))}%`;
-
-    // Render Pills
-    const showIds = showIdsToggle.checked;
     if (tokens.length === 0) {
         tokenPillsEl.innerHTML = `<span class="placeholder-text">Type text above...</span>`;
         tokenIdsOutputEl.innerText = '[ ]';
@@ -373,7 +312,6 @@ function runTokenization() {
 
     tokenPillsEl.innerHTML = tokens.map(tok => {
         const bgColor = stringToColor(tok.displayStr);
-        const tag = showIds ? `<span class="token-id">${tok.id}</span>` : '';
         const safeText = tok.displayStr
             .replace(/&/g, "&amp;")
             .replace(/</g, "&lt;")
@@ -382,7 +320,7 @@ function runTokenization() {
         return `
             <div class="token-badge" style="background-color: ${bgColor}">
                 <span>${safeText === ' ' ? '␣' : safeText}</span>
-                ${tag}
+                <span class="token-id">${tok.id}</span>
             </div>
         `;
     }).join('');
@@ -399,7 +337,7 @@ function renderMerges(mergeLogs) {
 
     mergesListEl.innerHTML = mergeLogs.map(log => `
         <div class="merge-row">
-            <span class="merge-pair">'${log.p1}' + '${log.p2}'</span>
+            <span>'${log.p1}' + '${log.p2}'</span>
             <span>➔ '${log.merged}'</span>
         </div>
     `).join('');
@@ -427,53 +365,4 @@ function renderVocabTable() {
     }
 
     vocabTableBody.innerHTML = rows.join('');
-}
-
-function exportModel() {
-    const data = {
-        vocab: tokenizer.vocab,
-        merges: tokenizer.merges,
-        selectedRegex: tokenizer.selectedRegex
-    };
-    const jsonStr = JSON.stringify(data, null, 2);
-    const blob = new Blob([jsonStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'bpe_tokenizer_model.json';
-    a.click();
-    URL.revokeObjectURL(url);
-}
-
-function importModel(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-        try {
-            const data = JSON.parse(evt.target.result);
-            tokenizer.vocab = data.vocab || {};
-            tokenizer.idToVocab = {};
-            for (const [k, v] of Object.entries(tokenizer.vocab)) {
-                tokenizer.idToVocab[v] = k;
-            }
-            tokenizer.merges = data.merges || [];
-            tokenizer.mergeRanks = {};
-            tokenizer.merges.forEach((pair, idx) => {
-                tokenizer.mergeRanks[pair[0] + '|' + pair[1]] = idx;
-            });
-            if (data.selectedRegex) {
-                tokenizer.selectedRegex = data.selectedRegex;
-                modelRegexSelect.value = data.selectedRegex;
-            }
-
-            renderVocabTable();
-            runTokenization();
-            alert("✓ Tokenizer Model Imported Successfully!");
-        } catch (err) {
-            alert("Failed to parse JSON model file.");
-        }
-    };
-    reader.readAsText(file);
 }
