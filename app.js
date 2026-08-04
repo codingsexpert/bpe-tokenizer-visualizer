@@ -303,10 +303,10 @@ const btnImportJson = document.getElementById('btn-import-json');
 
 document.addEventListener('DOMContentLoaded', () => {
     // Tabs Navigation
-    document.querySelectorAll('.tab-item').forEach(btn => {
+    document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            document.querySelectorAll('.tab-item').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.tab-view').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(p => p.classList.remove('active'));
 
             e.target.classList.add('active');
             document.getElementById(e.target.dataset.tab).classList.add('active');
@@ -314,7 +314,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Sample Chips
-    document.querySelectorAll('.pill-btn').forEach(chip => {
+    document.querySelectorAll('.chip').forEach(chip => {
         chip.addEventListener('click', (e) => {
             const key = e.target.dataset.sample;
             promptInput.value = SAMPLES[key];
@@ -531,7 +531,7 @@ function renderBenchmarkComparison(text) {
     const minCount = Math.min(...results.map(r => r.count));
 
     benchmarkList.innerHTML = results.map(r => `
-        <div class="bench-card ${r.count === minCount && text.length > 0 ? 'winner' : ''}">
+        <div class="benchmark-card ${r.count === minCount && text.length > 0 ? 'winner' : ''}">
             <span class="bench-model">${r.name}</span>
             <div class="bench-stats">
                 <span><strong>${r.count}</strong> tokens</span>
