@@ -9,8 +9,8 @@
     --accent-color: #4f46e5;
     --accent-hover: #4338ca;
     --accent-light: #eef2ff;
-    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    --font-mono: 'JetBrains Mono', monospace;
+    --font-sans: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
     --radius: 8px;
     --shadow-sm: 0 1px 2px 0 rgba(16, 24, 40, 0.05);
 }
@@ -68,6 +68,7 @@ body {
     font-weight: 700;
     font-size: 1.05rem;
     letter-spacing: -0.01em;
+    font-family: var(--font-sans);
 }
 
 .nav-actions {
@@ -155,6 +156,7 @@ body {
     font-size: 0.95rem;
     font-weight: 600;
     color: var(--text-primary);
+    font-family: var(--font-sans);
 }
 
 /* Stats Pills */
@@ -170,7 +172,7 @@ body {
     font-size: 0.75rem;
     padding: 0.2rem 0.55rem;
     border-radius: 6px;
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
 }
 
 .stat-pill strong {
@@ -189,7 +191,7 @@ textarea, input[type="number"], input[type="text"] {
     border-radius: var(--radius);
     color: var(--text-primary);
     padding: 0.65rem 0.85rem;
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
     font-size: 0.875rem;
     outline: none;
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
@@ -264,6 +266,7 @@ label {
     font-size: 0.8rem;
     font-weight: 600;
     color: var(--text-secondary);
+    font-family: var(--font-sans);
 }
 
 .toggle-control {
@@ -294,7 +297,7 @@ label {
     gap: 0.3rem;
     padding: 0.25rem 0.5rem;
     border-radius: 4px;
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
     font-size: 0.85rem;
     font-weight: 500;
     border: 1px solid rgba(0, 0, 0, 0.08);
@@ -313,6 +316,7 @@ label {
     background: rgba(0, 0, 0, 0.05);
     padding: 0 4px;
     border-radius: 3px;
+    font-family: var(--font-mono);
 }
 
 .code-box {
@@ -358,12 +362,13 @@ label {
     font-size: 0.72rem;
     color: var(--text-muted);
     font-weight: 500;
+    font-family: var(--font-sans);
 }
 
 .analytic-value {
     font-size: 1.15rem;
     font-weight: 700;
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
     color: var(--text-primary);
 }
 
@@ -383,6 +388,7 @@ label {
     font-size: 0.75rem;
     color: var(--text-muted);
     font-weight: 500;
+    font-family: var(--font-sans);
 }
 
 .progress-track {
@@ -429,6 +435,7 @@ label {
     padding: 0.3rem 0.6rem;
     font-size: 0.78rem;
     font-weight: 500;
+    font-family: var(--font-sans);
     cursor: pointer;
     display: inline-flex;
     align-items: center;
@@ -476,7 +483,7 @@ label {
     max-height: 120px;
     overflow-y: auto;
     padding: 0.4rem;
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
     font-size: 0.78rem;
     display: flex;
     flex-direction: column;
@@ -512,7 +519,7 @@ label {
 .simple-table {
     width: 100%;
     border-collapse: collapse;
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
     font-size: 0.78rem;
 }
 
