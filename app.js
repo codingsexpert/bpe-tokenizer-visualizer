@@ -3,14 +3,14 @@
 // =====================================================================
 
 const TOKEN_COLOR_PALETTE = [
-    { bg: 'rgba(99, 102, 241, 0.18)', border: '#6366f1', text: '#312e81' },
-    { bg: 'rgba(236, 72, 153, 0.18)', border: '#ec4899', text: '#831843' },
-    { bg: 'rgba(34, 197, 94, 0.18)', border: '#22c55e', text: '#14532d' },
-    { bg: 'rgba(245, 158, 11, 0.18)', border: '#f59e0b', text: '#78350f' },
-    { bg: 'rgba(168, 85, 247, 0.18)', border: '#a855f7', text: '#581c87' },
-    { bg: 'rgba(6, 182, 212, 0.18)', border: '#06b6d4', text: '#164e63' },
-    { bg: 'rgba(234, 88, 12, 0.18)', border: '#ea580c', text: '#7c2d12' },
-    { bg: 'rgba(16, 185, 129, 0.18)', border: '#10b981', text: '#064e3b' }
+    { bg: 'rgba(99, 102, 241, 0.22)', border: 'rgba(99, 102, 241, 0.4)', text: '#1e1b4b' },
+    { bg: 'rgba(236, 72, 153, 0.22)', border: 'rgba(236, 72, 153, 0.4)', text: '#831843' },
+    { bg: 'rgba(34, 197, 94, 0.22)', border: 'rgba(34, 197, 94, 0.4)', text: '#064e3b' },
+    { bg: 'rgba(245, 158, 11, 0.22)', border: 'rgba(245, 158, 11, 0.4)', text: '#78350f' },
+    { bg: 'rgba(168, 85, 247, 0.22)', border: 'rgba(168, 85, 247, 0.4)', text: '#581c87' },
+    { bg: 'rgba(6, 182, 212, 0.22)', border: 'rgba(6, 182, 212, 0.4)', text: '#164e63' },
+    { bg: 'rgba(234, 88, 12, 0.22)', border: 'rgba(234, 88, 12, 0.4)', text: '#7c2d12' },
+    { bg: 'rgba(16, 185, 129, 0.22)', border: 'rgba(16, 185, 129, 0.4)', text: '#064e3b' }
 ];
 
 function getTokenColor(idx) {
@@ -452,21 +452,20 @@ function runTokenization() {
         heatmapBox.innerHTML = `<span class="placeholder-text">Type text above to view compression heatmap...</span>`;
         sequenceDisplay.innerText = `[ ]`;
     } else {
-        // Render Realistic In-Text Token Viewport with Alternating Palette & Tooltips
+        // Render Realistic Marker-Style In-Text Token Stream (OpenAI Playground & Claude Style)
         if (inlineTokenView) {
             inlineTokenView.innerHTML = tokens.map((t, idx) => {
                 const palette = getTokenColor(idx);
                 const formattedText = formatSubword(t.displayStr);
                 return `
-                    <span class="token-inline-span" data-token-idx="${idx}" style="background-color: ${palette.bg}; border-color: ${palette.border}; color: ${palette.text}" title="Token #${idx + 1}&#10;String: '${formattedText}'&#10;ID: ${t.id}&#10;Chars: ${t.startIdx}..${t.endIdx}&#10;Hex: ${t.hex}">
-                        <span>${escapeHtml(formattedText)}</span>
-                        <span class="token-inline-idx">#${idx + 1}</span>
+                    <span class="token-inline-span" data-token-idx="${idx}" style="background-color: ${palette.bg}; border-color: ${palette.border}; color: ${palette.text}" title="Token #${idx + 1}&#10;Token ID: ${t.id}&#10;Subword: '${formattedText}'&#10;Char Pos: ${t.startIdx}..${t.endIdx}&#10;Hex: ${t.hex}">
+                        ${escapeHtml(t.displayStr)}
                     </span>
                 `;
             }).join('');
         }
 
-        // Render Subword Badges
+        // Render Clean Subword Cards in Inspector
         tokensBox.innerHTML = tokens.map((t, idx) => {
             const palette = getTokenColor(idx);
             const formattedText = formatSubword(t.displayStr);
