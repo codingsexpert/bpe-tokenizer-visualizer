@@ -3,117 +3,219 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BPE Tokenizer Playground</title>
+    <title>BPE Tokenizer Studio - Industry Grade Tokenizer & Inspector</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="app-container">
+    <div class="studio-layout">
         <!-- Top Navbar -->
-        <header class="header">
+        <header class="navbar">
             <div class="brand">
-                <span class="brand-name">BPE Tokenizer</span>
+                <div class="brand-logo">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M4 7V4h16v3M9 20h6M12 4v16"/>
+                    </svg>
+                </div>
+                <div class="brand-info">
+                    <span class="brand-title">Tokenizer Studio</span>
+                    <span class="brand-version">v2.4 Pro</span>
+                </div>
             </div>
-            
-            <!-- Main Navigation Tabs -->
-            <div class="tab-nav">
-                <button class="tab-btn active" data-tab="tab-playground">Playground</button>
-                <button class="tab-btn" data-tab="tab-trainer">Train & Vocabulary</button>
+
+            <div class="nav-controls">
+                <div class="select-wrapper">
+                    <span class="select-label">Model Engine:</span>
+                    <select id="model-select" class="studio-select">
+                        <option value="gpt4">GPT-4o / GPT-4 (cl100k_base)</option>
+                        <option value="gpt2">GPT-2 / GPT-3 (r50k_base)</option>
+                        <option value="llama3">Llama-3 / Mistral (128k)</option>
+                        <option value="custom">Custom Trained BPE</option>
+                    </select>
+                </div>
+
+                <div class="nav-btn-group">
+                    <button id="btn-export-json" class="btn-studio">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        Export Model
+                    </button>
+                    <label class="btn-studio">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        Import Model
+                        <input type="file" id="btn-import-json" accept=".json" class="hidden">
+                    </label>
+                </div>
             </div>
         </header>
 
-        <!-- TAB 1: PLAYGROUND (Super Clean & Focused) -->
-        <main id="tab-playground" class="tab-content active">
-            <div class="card">
-                <div class="card-header">
-                    <label for="test-text">Input Text</label>
-                    <div class="preset-links">
-                        <span>Sample:</span>
-                        <button class="link-btn" data-sample="multilingual">Multilingual</button>
-                        <button class="link-btn" data-sample="english">English</button>
-                        <button class="link-btn" data-sample="code">Code</button>
+        <!-- Studio Split Workspace -->
+        <main class="studio-body">
+            <!-- Left Pane: Input Text Editor & Subword Visualizer -->
+            <section class="pane left-pane">
+                <div class="pane-header">
+                    <div class="pane-title">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                        <span>Prompt Editor</span>
+                    </div>
+                    <div class="samples-bar">
+                        <span>Preset Samples:</span>
+                        <button class="sample-chip" data-sample="multilingual">Hindi + English</button>
+                        <button class="sample-chip" data-sample="code">Python Code</button>
+                        <button class="sample-chip" data-sample="classic">BPE Classic</button>
                     </div>
                 </div>
-                <textarea id="test-text" rows="4" placeholder="Type or paste any text here to see subword tokens..."></textarea>
 
-                <div class="token-result-box">
-                    <div class="box-header">
-                        <span class="box-title">Subword Tokens</span>
-                        <div class="stats-row">
-                            <span class="stat-tag"><strong id="stat-tokens">0</strong> tokens</span>
-                            <span class="stat-tag"><strong id="stat-chars">0</strong> chars</span>
-                        </div>
+                <div class="editor-area">
+                    <textarea id="prompt-input" placeholder="Type or paste any text to see subword tokenization in real time..."></textarea>
+                </div>
+
+                <!-- Subword Token Highlight Overlay -->
+                <div class="visualizer-area">
+                    <div class="visualizer-header">
+                        <span>Colored Subword Tokens</span>
+                        <span class="hint-text">Click any token badge to highlight in table</span>
                     </div>
-                    <div class="tokens-container" id="token-pills">
+                    <div class="tokens-display-box" id="tokens-display">
                         <span class="placeholder-text">Type text above...</span>
                     </div>
                 </div>
 
-                <div class="code-result-box">
-                    <div class="box-header">
-                        <span class="box-title">Token IDs</span>
-                        <button id="btn-copy-ids" class="btn-sm">Copy IDs</button>
+                <!-- Token ID Array & Copy Box -->
+                <div class="array-output-area">
+                    <div class="array-header">
+                        <span>Token ID Sequence</span>
+                        <button id="btn-copy-sequence" class="btn-copy">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                            Copy Array
+                        </button>
                     </div>
-                    <div class="code-display" id="token-ids-output">[ ]</div>
+                    <div class="sequence-box" id="token-sequence">[ ]</div>
                 </div>
-            </div>
-        </main>
+            </section>
 
-        <!-- TAB 2: TRAINER & VOCABULARY -->
-        <main id="tab-trainer" class="tab-content">
-            <div class="grid-2col">
-                <!-- Training Card -->
-                <div class="card">
-                    <div class="card-header">
-                        <h2>1. Model Training</h2>
-                    </div>
+            <!-- Right Pane: Inspector & Analytics Studio -->
+            <section class="pane right-pane">
+                <!-- Inspector Tabs -->
+                <div class="inspector-tabs">
+                    <button class="inspector-tab active" data-tab="tab-tokens">Tokens (<span id="count-tokens">0</span>)</button>
+                    <button class="inspector-tab" data-tab="tab-analytics">Analytics & Cost</button>
+                    <button class="inspector-tab" data-tab="tab-trainer">Train BPE</button>
+                    <button class="inspector-tab" data-tab="tab-vocab">Vocab Explorer</button>
+                </div>
 
-                    <div class="field">
-                        <label for="train-text">Training Text Corpus</label>
-                        <textarea id="train-text" rows="4" placeholder="Enter corpus text to learn BPE vocabulary..."></textarea>
-                    </div>
-
-                    <div class="field-row">
-                        <div class="field flex-1">
-                            <label for="target-vocab">Target Vocab Size</label>
-                            <input type="number" id="target-vocab" value="300" min="260" max="1000">
-                        </div>
-                        <div class="field flex-1">
-                            <label for="model-regex-select">Regex Rule</label>
-                            <select id="model-regex-select" class="select-input">
-                                <option value="gpt2">GPT-2 / GPT-3</option>
-                                <option value="gpt4">GPT-4 (cl100k)</option>
-                                <option value="llama3">Llama 3</option>
-                                <option value="whitespace">Whitespace</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <button id="btn-train" class="btn-primary">Train Tokenizer</button>
-
-                    <div class="field margin-top">
-                        <label>Step Playback: <span id="current-step-label">Step Max</span></label>
-                        <input type="range" id="merge-step-slider" min="0" max="0" value="0" class="range-slider">
-                    </div>
-
-                    <div class="field">
-                        <label>Learned Merges (<span id="merges-count">0</span>)</label>
-                        <div class="merges-list" id="merges-list"></div>
+                <!-- Tab 1: Tokens Table Inspector -->
+                <div id="tab-tokens" class="tab-pane active">
+                    <div class="table-wrapper">
+                        <table class="inspector-table">
+                            <thead>
+                                <tr>
+                                    <th>Index</th>
+                                    <th>Token ID</th>
+                                    <th>Subword String</th>
+                                    <th>UTF-8 Bytes</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tokens-table-body">
+                                <tr><td colspan="4" class="empty-cell">No tokens generated</td></tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
-                <!-- Vocabulary Table Card -->
-                <div class="card">
-                    <div class="card-header">
-                        <h2>2. Vocabulary Explorer</h2>
-                        <input type="text" id="vocab-search" placeholder="Search ID or Token..." class="search-input">
+                <!-- Tab 2: Analytics & Cost -->
+                <div id="tab-analytics" class="tab-pane">
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <span class="metric-label">Token Count</span>
+                            <span class="metric-val" id="metric-tokens">0</span>
+                        </div>
+                        <div class="metric-card">
+                            <span class="metric-label">Character Count</span>
+                            <span class="metric-val" id="metric-chars">0</span>
+                        </div>
+                        <div class="metric-card">
+                            <span class="metric-label">Characters / Token</span>
+                            <span class="metric-val accent" id="metric-ratio">0.00</span>
+                        </div>
+                        <div class="metric-card">
+                            <span class="metric-label">Est. GPT-4o Cost</span>
+                            <span class="metric-val" id="metric-cost">$0.00000</span>
+                        </div>
                     </div>
 
-                    <div class="table-container">
-                        <table class="vocab-table">
+                    <div class="card-box margin-top">
+                        <div class="box-row">
+                            <span class="row-label">128K Context Window Utilization</span>
+                            <span class="row-val" id="context-val">0.00%</span>
+                        </div>
+                        <div class="progress-bg">
+                            <div class="progress-fill" id="context-fill" style="width: 0%;"></div>
+                        </div>
+                    </div>
+
+                    <div class="card-box margin-top">
+                        <span class="box-heading">Efficiency Comparison</span>
+                        <div class="comp-row">
+                            <span>Character-level Encoding:</span>
+                            <strong id="comp-char">0 tokens</strong>
+                        </div>
+                        <div class="comp-row">
+                            <span>Word-level Encoding:</span>
+                            <strong id="comp-word">0 tokens</strong>
+                        </div>
+                        <div class="comp-row highlight">
+                            <span>BPE Subword Encoding:</span>
+                            <strong id="comp-bpe">0 tokens</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 3: Train BPE Corpus -->
+                <div id="tab-trainer" class="tab-pane">
+                    <div class="form-container">
+                        <div class="form-group">
+                            <label for="corpus-input">Training Corpus</label>
+                            <textarea id="corpus-input" rows="4" placeholder="Enter custom corpus text to learn BPE merge rules..."></textarea>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group flex-1">
+                                <label for="target-vocab">Target Vocab Size</label>
+                                <input type="number" id="target-vocab" value="300" min="260" max="2000">
+                            </div>
+                        </div>
+
+                        <button id="btn-train-model" class="btn-primary">Train Custom BPE</button>
+
+                        <div class="form-group margin-top">
+                            <div class="box-row">
+                                <label>Step Playback:</label>
+                                <span id="step-count-label">Step Max</span>
+                            </div>
+                            <input type="range" id="step-slider" min="0" max="0" value="0" class="studio-slider">
+                        </div>
+
+                        <div class="merges-box">
+                            <label>Learned Merges (<span id="merges-total">0</span>)</label>
+                            <div class="merges-scroll" id="merges-list-body"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 4: Vocab Explorer -->
+                <div id="tab-vocab" class="tab-pane">
+                    <div class="search-bar">
+                        <input type="text" id="vocab-query" placeholder="Filter by Token ID or String..." class="search-input">
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="inspector-table">
                             <thead>
                                 <tr>
                                     <th>ID</th>
-                                    <th>Token String</th>
+                                    <th>Token Representation</th>
                                     <th>Type</th>
                                 </tr>
                             </thead>
@@ -121,7 +223,7 @@
                         </table>
                     </div>
                 </div>
-            </div>
+            </section>
         </main>
     </div>
 

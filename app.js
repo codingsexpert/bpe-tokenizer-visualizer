@@ -1,5 +1,5 @@
 // =====================================================================
-//  Byte-Level BPE Tokenizer - Clean 2-Tab Application Controller
+//  BPE Tokenizer Studio Pro - Client Controller (GPT-4o / GPT-2 / Llama 3)
 // =====================================================================
 
 const PASTEL_PALETTE = [
@@ -42,10 +42,10 @@ function getBytesToUnicode() {
 const { byteToUnicode } = getBytesToUnicode();
 
 const REGEX_PATTERNS = {
-    gpt2: /'s|'t|'re|'ve|'m|'ll|'d| ?\w+| ?[^\s\w]+|\s+(?!\S)|\s+/gu,
     gpt4: /(?:'[sS]|'[tT]|'[rR][eE]|'[vV][eE]|'[mM]|'[lL][lL]|'[dD])|[^r\n\p{L}\p{N}]?\p{L}+|\p{N}{1,3}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+/gu,
+    gpt2: /'s|'t|'re|'ve|'m|'ll|'d| ?\w+| ?[^\s\w]+|\s+(?!\S)|\s+/gu,
     llama3: /[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]*[\p{Ll}\p{Lm}\p{Lo}\p{M}]+(?i:'s|'t|'re|'ve|'m|'ll|'d)?|[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]+[\p{Ll}\p{Lm}\p{Lo}\p{M}]*(?i:'s|'t|'re|'ve|'m|'ll|'d)?|\p{N}{1,3}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+/gu,
-    whitespace: /\S+|\s+/gu
+    custom: /'s|'t|'re|'ve|'m|'ll|'d| ?\w+| ?[^\s\w]+|\s+(?!\S)|\s+/gu
 };
 
 class JSBPETokenizer {
@@ -54,7 +54,7 @@ class JSBPETokenizer {
         this.idToVocab = {};
         this.merges = [];
         this.mergeRanks = {};
-        this.selectedRegex = 'gpt2';
+        this.selectedRegex = 'gpt4';
         this.reset();
     }
 
@@ -76,7 +76,7 @@ class JSBPETokenizer {
         const numMerges = targetVocabSize - 256;
         if (numMerges <= 0) return [];
 
-        const regex = REGEX_PATTERNS[this.selectedRegex] || REGEX_PATTERNS.gpt2;
+        const regex = REGEX_PATTERNS[this.selectedRegex] || REGEX_PATTERNS.gpt4;
         const chunks = text.match(regex) || [text];
 
         const wordFreq = new Map();
@@ -179,15 +179,20 @@ class JSBPETokenizer {
             parts.splice(bestIdx + 1, 1);
         }
 
-        return parts.map(p => ({
-            id: this.vocab[p] !== undefined ? this.vocab[p] : 0,
-            tokenStr: p,
-            displayStr: Array.from(p).map(c => byteToUnicode[c.charCodeAt(0)] || c).join('')
-        }));
+        return parts.map(p => {
+            const rawBytes = Array.from(p).map(c => c.charCodeAt(0));
+            const hex = rawBytes.map(b => b.toString(16).padStart(2, '0').toUpperCase()).join(' ');
+            return {
+                id: this.vocab[p] !== undefined ? this.vocab[p] : 0,
+                tokenStr: p,
+                displayStr: Array.from(p).map(c => byteToUnicode[c.charCodeAt(0)] || c).join(''),
+                hex: hex
+            };
+        });
     }
 
     encode(text, maxMergeStep = Infinity) {
-        const regex = REGEX_PATTERNS[this.selectedRegex] || REGEX_PATTERNS.gpt2;
+        const regex = REGEX_PATTERNS[this.selectedRegex] || REGEX_PATTERNS.gpt4;
         const chunks = text.match(regex) || (text ? [text] : []);
         const encoder = new TextEncoder();
         let tokens = [];
@@ -204,90 +209,111 @@ class JSBPETokenizer {
 const tokenizer = new JSBPETokenizer();
 
 const SAMPLES = {
-    multilingual: "Hello world! Don't worry, BPE tokenization is 100% working. नमस्ते दुनिया! Python BPE tokenizer is super fast.",
-    english: "low low low low low lower lower newest newest newest",
-    code: "function tokenize(x) { return x.split('').map(c => c.charCodeAt(0)); }"
+    multilingual: `Hello world! Don't worry, BPE tokenization is 100% working. नमस्ते दुनिया! Tokenizer Studio is ready.`,
+    code: `def bpe_encode(text):\n    tokens = tokenizer.encode(text)\n    return [t.id for t in tokens]`,
+    classic: `low low low low low lower lower newest newest newest`
 };
 
 // DOM Elements
-const testTextEl = document.getElementById('test-text');
-const tokenPillsEl = document.getElementById('token-pills');
-const tokenIdsOutputEl = document.getElementById('token-ids-output');
-const statTokensEl = document.getElementById('stat-tokens');
-const statCharsEl = document.getElementById('stat-chars');
-const btnCopyIds = document.getElementById('btn-copy-ids');
+const promptInput = document.getElementById('prompt-input');
+const tokensDisplay = document.getElementById('tokens-display');
+const tokenSequence = document.getElementById('token-sequence');
+const countTokens = document.getElementById('count-tokens');
 
-const trainTextEl = document.getElementById('train-text');
-const targetVocabEl = document.getElementById('target-vocab');
-const modelRegexSelect = document.getElementById('model-regex-select');
-const btnTrain = document.getElementById('btn-train');
-const mergeStepSlider = document.getElementById('merge-step-slider');
-const currentStepLabel = document.getElementById('current-step-label');
-const mergesListEl = document.getElementById('merges-list');
-const mergesCountEl = document.getElementById('merges-count');
+const modelSelect = document.getElementById('model-select');
+const btnCopySequence = document.getElementById('btn-copy-sequence');
 
+const tokensTableBody = document.getElementById('tokens-table-body');
 const vocabTableBody = document.getElementById('vocab-table-body');
-const vocabSearchEl = document.getElementById('vocab-search');
+const vocabQuery = document.getElementById('vocab-query');
+
+const metricTokens = document.getElementById('metric-tokens');
+const metricChars = document.getElementById('metric-chars');
+const metricRatio = document.getElementById('metric-ratio');
+const metricCost = document.getElementById('metric-cost');
+const contextVal = document.getElementById('context-val');
+const contextFill = document.getElementById('context-fill');
+
+const compChar = document.getElementById('comp-char');
+const compWord = document.getElementById('comp-word');
+const compBpe = document.getElementById('comp-bpe');
+
+const corpusInput = document.getElementById('corpus-input');
+const targetVocab = document.getElementById('target-vocab');
+const btnTrainModel = document.getElementById('btn-train-model');
+const stepSlider = document.getElementById('step-slider');
+const stepCountLabel = document.getElementById('step-count-label');
+const mergesTotal = document.getElementById('merges-total');
+const mergesListBody = document.getElementById('merges-list-body');
+
+const btnExportJson = document.getElementById('btn-export-json');
+const btnImportJson = document.getElementById('btn-import-json');
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Tab Navigation
-    document.querySelectorAll('.tab-btn').forEach(btn => {
+    // Tab Switching
+    document.querySelectorAll('.inspector-tab').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.inspector-tab').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
             
             e.target.classList.add('active');
-            const tabId = e.target.dataset.tab;
-            document.getElementById(tabId).classList.add('active');
+            document.getElementById(e.target.dataset.tab).classList.add('active');
         });
     });
 
-    // Preset Links
-    document.querySelectorAll('.link-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
+    // Preset Sample Chips
+    document.querySelectorAll('.sample-chip').forEach(chip => {
+        chip.addEventListener('click', (e) => {
             const key = e.target.dataset.sample;
-            testTextEl.value = SAMPLES[key];
+            promptInput.value = SAMPLES[key];
             runTokenization();
         });
     });
 
-    // Inputs
-    testTextEl.value = SAMPLES.multilingual;
-    trainTextEl.value = SAMPLES.multilingual;
-
-    testTextEl.addEventListener('input', runTokenization);
-    btnTrain.addEventListener('click', runTraining);
-    modelRegexSelect.addEventListener('change', (e) => {
+    // Model Change
+    modelSelect.addEventListener('change', (e) => {
         tokenizer.selectedRegex = e.target.value;
         runTraining();
     });
 
-    mergeStepSlider.addEventListener('input', () => {
-        const val = parseInt(mergeStepSlider.value);
-        const max = parseInt(mergeStepSlider.max);
-        currentStepLabel.innerText = val === max ? `Step ${val} (Max)` : `Step ${val}/${max}`;
+    // Input Listeners
+    promptInput.value = SAMPLES.multilingual;
+    corpusInput.value = SAMPLES.multilingual;
+
+    promptInput.addEventListener('input', runTokenization);
+    btnTrainModel.addEventListener('click', runTraining);
+
+    stepSlider.addEventListener('input', () => {
+        const val = parseInt(stepSlider.value);
+        const max = parseInt(stepSlider.max);
+        stepCountLabel.innerText = val === max ? `Step ${val} (Max)` : `Step ${val}/${max}`;
         runTokenization();
     });
 
-    vocabSearchEl.addEventListener('input', renderVocabTable);
+    vocabQuery.addEventListener('input', renderVocabTable);
 
-    btnCopyIds.addEventListener('click', () => {
-        navigator.clipboard.writeText(tokenIdsOutputEl.innerText);
-        btnCopyIds.innerText = "Copied!";
-        setTimeout(() => btnCopyIds.innerText = "Copy IDs", 1500);
+    btnCopySequence.addEventListener('click', () => {
+        navigator.clipboard.writeText(tokenSequence.innerText);
+        btnCopySequence.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Copied`;
+        setTimeout(() => {
+            btnCopySequence.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy Array`;
+        }, 1500);
     });
+
+    btnExportJson.addEventListener('click', exportModelJSON);
+    btnImportJson.addEventListener('change', importModelJSON);
 
     runTraining();
 });
 
 function runTraining() {
-    const text = trainTextEl.value;
-    const targetVocab = parseInt(targetVocabEl.value) || 300;
-    const mergeLogs = tokenizer.train(text, targetVocab);
+    const text = corpusInput.value;
+    const size = parseInt(targetVocab.value) || 300;
+    const mergeLogs = tokenizer.train(text, size);
 
-    mergeStepSlider.max = mergeLogs.length;
-    mergeStepSlider.value = mergeLogs.length;
-    currentStepLabel.innerText = `Step ${mergeLogs.length} (Max)`;
+    stepSlider.max = mergeLogs.length;
+    stepSlider.value = mergeLogs.length;
+    stepCountLabel.innerText = `Step ${mergeLogs.length} (Max)`;
 
     renderMerges(mergeLogs);
     renderVocabTable();
@@ -295,22 +321,45 @@ function runTraining() {
 }
 
 function runTokenization() {
-    const text = testTextEl.value;
-    const currentStep = parseInt(mergeStepSlider.value) - 1;
+    const text = promptInput.value;
+    const currentStep = parseInt(stepSlider.value) - 1;
     const maxStep = currentStep < 0 ? -1 : currentStep;
 
     const tokens = tokenizer.encode(text, maxStep);
 
-    statCharsEl.innerText = text.length;
-    statTokensEl.innerText = tokens.length;
+    countTokens.innerText = tokens.length;
+    metricTokens.innerText = tokens.length;
+    metricChars.innerText = text.length;
+
+    const ratio = tokens.length > 0 ? (text.length / tokens.length).toFixed(2) : '0.00';
+    metricRatio.innerText = ratio;
+
+    // GPT-4o pricing ($0.0025 / 1k tokens)
+    const cost = (tokens.length / 1000) * 0.0025;
+    metricCost.innerText = `$${cost.toFixed(5)}`;
+
+    // Context Window
+    const contextPct = ((tokens.length / 128000) * 100).toFixed(3);
+    contextVal.innerText = `${contextPct}%`;
+    contextFill.style.width = `${Math.min(100, Math.max(0.5, parseFloat(contextPct)))}%`;
+
+    // Efficiency Comparison
+    const encoder = new TextEncoder();
+    const charCount = Array.from(encoder.encode(text)).length;
+    const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
+    compChar.innerText = `${charCount} tokens`;
+    compWord.innerText = `${wordCount} tokens`;
+    compBpe.innerText = `${tokens.length} tokens`;
 
     if (tokens.length === 0) {
-        tokenPillsEl.innerHTML = `<span class="placeholder-text">Type text above...</span>`;
-        tokenIdsOutputEl.innerText = '[ ]';
+        tokensDisplay.innerHTML = `<span class="placeholder-text">Type text above...</span>`;
+        tokenSequence.innerText = '[ ]';
+        tokensTableBody.innerHTML = `<tr><td colspan="4" class="empty-cell">No tokens generated</td></tr>`;
         return;
     }
 
-    tokenPillsEl.innerHTML = tokens.map(tok => {
+    // Render Subword Badges
+    tokensDisplay.innerHTML = tokens.map((tok, idx) => {
         const bgColor = stringToColor(tok.displayStr);
         const safeText = tok.displayStr
             .replace(/&/g, "&amp;")
@@ -318,25 +367,48 @@ function runTokenization() {
             .replace(/>/g, "&gt;");
 
         return `
-            <div class="token-badge" style="background-color: ${bgColor}">
+            <div class="token-chip" style="background-color: ${bgColor}" data-index="${idx}">
                 <span>${safeText === ' ' ? '␣' : safeText}</span>
-                <span class="token-id">${tok.id}</span>
+                <span class="chip-id">${tok.id}</span>
             </div>
         `;
     }).join('');
 
-    tokenIdsOutputEl.innerText = `[ ${tokens.map(t => t.id).join(', ')} ]`;
+    tokenSequence.innerText = `[ ${tokens.map(t => t.id).join(', ')} ]`;
+
+    // Render Tokens Table
+    tokensTableBody.innerHTML = tokens.map((tok, idx) => `
+        <tr id="token-row-${idx}">
+            <td style="color: var(--text-muted)">#${idx + 1}</td>
+            <td style="color: var(--accent-color); font-weight:700;">${tok.id}</td>
+            <td style="font-weight:600;">'${tok.displayStr}'</td>
+            <td style="color: var(--text-muted); font-size:0.78rem;">${tok.hex}</td>
+        </tr>
+    `).join('');
+
+    // Token Chip Click -> Scroll & Highlight Row in Table
+    document.querySelectorAll('.token-chip').forEach(chip => {
+        chip.addEventListener('click', (e) => {
+            const index = e.currentTarget.dataset.index;
+            document.querySelectorAll('.inspector-table tr').forEach(r => r.classList.remove('selected'));
+            const row = document.getElementById(`token-row-${index}`);
+            if (row) {
+                row.classList.add('selected');
+                row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        });
+    });
 }
 
 function renderMerges(mergeLogs) {
-    mergesCountEl.innerText = mergeLogs.length;
+    mergesTotal.innerText = mergeLogs.length;
     if (mergeLogs.length === 0) {
-        mergesListEl.innerHTML = `<span class="placeholder-text">No merges learned.</span>`;
+        mergesListBody.innerHTML = `<span class="placeholder-text">No merges learned.</span>`;
         return;
     }
 
-    mergesListEl.innerHTML = mergeLogs.map(log => `
-        <div class="merge-row">
+    mergesListBody.innerHTML = mergeLogs.map(log => `
+        <div class="merge-item">
             <span>'${log.p1}' + '${log.p2}'</span>
             <span>➔ '${log.merged}'</span>
         </div>
@@ -344,25 +416,73 @@ function renderMerges(mergeLogs) {
 }
 
 function renderVocabTable() {
-    const search = vocabSearchEl.value.toLowerCase();
+    const q = vocabQuery.value.toLowerCase();
     const rows = [];
 
     for (const [tokenStr, id] of Object.entries(tokenizer.vocab)) {
         const displayStr = Array.from(tokenStr).map(c => byteToUnicode[c.charCodeAt(0)] || c).join('');
-        const type = id < 256 ? 'Byte' : 'Subword';
+        const type = id < 256 ? 'Base Byte' : 'Subword';
 
-        if (search && !id.toString().includes(search) && !displayStr.toLowerCase().includes(search)) {
+        if (q && !id.toString().includes(q) && !displayStr.toLowerCase().includes(q)) {
             continue;
         }
 
         rows.push(`
             <tr>
-                <td style="color: var(--accent-color); font-weight:600;">${id}</td>
-                <td>'${displayStr}'</td>
-                <td style="color: var(--text-muted);">${type}</td>
+                <td style="color: var(--accent-color); font-weight:700;">${id}</td>
+                <td style="font-weight:600;">'${displayStr}'</td>
+                <td style="color: var(--text-muted); font-size:0.78rem;">${type}</td>
             </tr>
         `);
     }
 
     vocabTableBody.innerHTML = rows.join('');
+}
+
+function exportModelJSON() {
+    const data = {
+        vocab: tokenizer.vocab,
+        merges: tokenizer.merges,
+        selectedRegex: tokenizer.selectedRegex
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'bpe_tokenizer_studio_model.json';
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+function importModelJSON(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+        try {
+            const data = JSON.parse(evt.target.result);
+            tokenizer.vocab = data.vocab || {};
+            tokenizer.idToVocab = {};
+            for (const [k, v] of Object.entries(tokenizer.vocab)) {
+                tokenizer.idToVocab[v] = k;
+            }
+            tokenizer.merges = data.merges || [];
+            tokenizer.mergeRanks = {};
+            tokenizer.merges.forEach((pair, idx) => {
+                tokenizer.mergeRanks[pair[0] + '|' + pair[1]] = idx;
+            });
+            if (data.selectedRegex) {
+                tokenizer.selectedRegex = data.selectedRegex;
+                modelSelect.value = data.selectedRegex;
+            }
+
+            renderVocabTable();
+            runTokenization();
+            alert("✓ Industry Tokenizer Model Imported!");
+        } catch (err) {
+            alert("Error loading model JSON.");
+        }
+    };
+    reader.readAsText(file);
 }
