@@ -323,11 +323,6 @@ document.addEventListener('DOMContentLoaded', () => {
     promptInput.value = "Tokenizers process text into subword units for LLMs.";
     corpusText.value = SAMPLES.multilingual;
 
-    const btnSendPrompt = document.getElementById('btn-send-prompt');
-    if (btnSendPrompt) {
-        btnSendPrompt.addEventListener('click', runTokenization);
-    }
-
     promptInput.addEventListener('input', runTokenization);
     btnTrainCustom.addEventListener('click', runTraining);
 
