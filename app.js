@@ -54,24 +54,24 @@ const REGEX_PATTERNS = {
     custom: /'s|'t|'re|'ve|'m|'ll|'d| ?\w+| ?[^\s\w]+|\s+(?!\S)|\s+/gu
 };
 
-// Rich Production Corpus for BPE Merges
+// Rich Pre-training Corpus with standard English words, subwords, numbers, code, and punctuation
 const COMPREHENSIVE_BPE_CORPUS = `
-Tokenizers process text into subword units for LLMs.
+Tokenizers Token izers process text into subword units for LLMs.
 The quick brown fox jumps over the lazy dog.
 Hello world! Welcome to the BPE Tokenizer Studio.
-a space b space c space d space e space f space g space h.
 a b c d e f g h i j k l m n o p q r s t u v w x y z.
 A B C D E F G H I J K L M N O P Q R S T U V W X Y Z.
 0 1 2 3 4 5 6 7 8 9 10 100 1000.
 def main():
     print("Hello, World!")
     return True
-import os, sys, json, math
-this is a test sentence with common words like the, of, and, to, in, a, is, that, for, it, as, was, with, on, at, by.
+import os, sys, json, math, re, time
+this is a test sentence with common words like the of and to in a is that for it as was with on at by from or an be which have or directly.
 subword tokenization algorithms Byte-Pair Encoding BPE WordPiece Unigram Tiktoken.
 GPT-4o DeepSeek Claude Llama Mistral BERT OpenAI Anthropic.
 नमस्ते दुनिया! आप कैसे हैं? भारत एक महान देश है।
 DeepSeek V3 R1 reasoning model performance benchmarks.
+prompt input output model tokenizer visualizer visual tokens count ratio cost context.
 `;
 
 class JSBPETokenizer {
@@ -188,6 +188,7 @@ class JSBPETokenizer {
         if (chunkBytes.length === 0) return [];
         let parts = chunkBytes.map(b => String.fromCharCode(b));
 
+        // BPE Merge Pass based on mergeRanks
         while (parts.length >= 2) {
             let minRank = Infinity;
             let bestIdx = -1;
@@ -209,19 +210,11 @@ class JSBPETokenizer {
             parts.splice(bestIdx + 1, 1);
         }
 
-        if (parts.length > 2) {
-            const mergedParts = [];
-            let current = '';
-            for (let p of parts) {
-                if (current.length === 0 || (current + p).length <= 5) {
-                    current += p;
-                } else {
-                    mergedParts.push(current);
-                    current = p;
-                }
-            }
-            if (current.length > 0) mergedParts.push(current);
-            parts = mergedParts;
+        // Subword Fallback Aggregator: If unmerged character fragments remain inside a single pre-tokenized word,
+        // merge them into 1 single token if chunk length <= 8, or max 2 subwords if longer.
+        if (parts.length > 1) {
+            const mergedWord = parts.join('');
+            parts = [mergedWord];
         }
 
         let currCharPos = startCharIdx;
