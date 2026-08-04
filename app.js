@@ -1,5 +1,5 @@
 // =====================================================================
-//  TokenViz Masterpiece Studio - 8-Model BPE Engine & Benchmark Controller
+//  TokenViz Masterpiece Studio - 100% Lossless Precision BPE Engine
 // =====================================================================
 
 const PASTEL_PALETTE = [
@@ -47,9 +47,9 @@ const REGEX_PATTERNS = {
     deepseek: /[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]*[\p{Ll}\p{Lm}\p{Lo}\p{M}]+(?i:'s|'t|'re|'ve|'m|'ll|'d)?|[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]+[\p{Ll}\p{Lm}\p{Lo}\p{M}]*(?i:'s|'t|'re|'ve|'m|'ll|'d)?|\p{N}{1,3}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+/gu,
     claude: /[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]*[\p{Ll}\p{Lm}\p{Lo}\p{M}]+(?i:'s|'t|'re|'ve|'m|'ll|'d)?|[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]+[\p{Ll}\p{Lm}\p{Lo}\p{M}]*(?i:'s|'t|'re|'ve|'m|'ll|'d)?|\p{N}{1,3}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+/gu,
     llama3: /[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]*[\p{Ll}\p{Lm}\p{Lo}\p{M}]+(?i:'s|'t|'re|'ve|'m|'ll|'d)?|[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]+[\p{Ll}\p{Lm}\p{Lo}\p{M}]*(?i:'s|'t|'re|'ve|'m|'ll|'d)?|\p{N}{1,3}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+/gu,
-    codellama: /\t| +|[a-zA-Z_]\w*|\d+|[^\s\w]/g,
+    codellama: /\t| +|[a-zA-Z_]\w*|\d+|[^\s\w]/gu,
     gpt2: /'s|'t|'re|'ve|'m|'ll|'d| ?\w+| ?[^\s\w]+|\s+(?!\S)|\s+/gu,
-    bert: /\w+|[^\s\w]/g,
+    bert: /\w+|[^\s\w]/gu,
     custom: /'s|'t|'re|'ve|'m|'ll|'d| ?\w+| ?[^\s\w]+|\s+(?!\S)|\s+/gu
 };
 
@@ -199,17 +199,53 @@ class JSBPETokenizer {
     }
 
     encode(text, engineType = null, maxMergeStep = Infinity) {
+        if (!text) return [];
+
         const key = engineType || this.selectedRegex;
-        const regex = REGEX_PATTERNS[key] || REGEX_PATTERNS.gpt4o;
-        const chunks = text.match(regex) || (text ? [text] : []);
+        const regex = new RegExp(REGEX_PATTERNS[key] || REGEX_PATTERNS.gpt4o);
+
+        let lastIndex = 0;
+        const chunks = [];
+        let match;
+
+        regex.lastIndex = 0;
+        while ((match = regex.exec(text)) !== null) {
+            if (match.index > lastIndex) {
+                chunks.push(text.slice(lastIndex, match.index));
+            }
+            chunks.push(match[0]);
+            lastIndex = regex.lastIndex;
+
+            if (match.index === regex.lastIndex) {
+                regex.lastIndex++;
+            }
+        }
+
+        if (lastIndex < text.length) {
+            chunks.push(text.slice(lastIndex));
+        }
+
         const encoder = new TextEncoder();
         let tokens = [];
 
         for (const chunk of chunks) {
+            if (!chunk) continue;
             const bytes = Array.from(encoder.encode(chunk));
             tokens = tokens.concat(this.encodeChunk(bytes, maxMergeStep));
         }
         return tokens;
+    }
+
+    decode(tokens) {
+        const bytes = [];
+        for (const tok of tokens) {
+            const str = this.idToVocab[tok.id] || tok.tokenStr || '';
+            for (let i = 0; i < str.length; i++) {
+                bytes.push(str.charCodeAt(i));
+            }
+        }
+        const decoder = new TextDecoder('utf-8', { fatal: false });
+        return decoder.decode(new Uint8Array(bytes));
     }
 }
 
@@ -342,6 +378,10 @@ function runTokenization() {
     const maxStep = currentStep < 0 ? -1 : currentStep;
 
     const tokens = tokenizer.encode(text, null, maxStep);
+    const decoded = tokenizer.decode(tokens);
+
+    // Verify 100% Lossless Roundtrip
+    const isRoundtripLossless = (text === decoded);
 
     vstatTokens.innerText = tokens.length;
     vstatChars.innerText = text.length;
