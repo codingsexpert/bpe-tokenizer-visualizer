@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TokenViz - World Class BPE Tokenizer Visualizer</title>
+    <title>TokenViz - World Class BPE Tokenizer Studio</title>
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -24,7 +24,7 @@
                 </div>
                 <div class="brand-meta">
                     <span class="brand-name">TokenViz Studio</span>
-                    <span class="brand-tag">v3.5 Ultra</span>
+                    <span class="brand-tag">v4.0 Max</span>
                 </div>
             </div>
 
@@ -35,8 +35,12 @@
                     <select id="engine-select" class="nav-select">
                         <option value="gpt4o">GPT-4o (o200k_base BPE)</option>
                         <option value="gpt4">GPT-4 / GPT-3.5 (cl100k_base BPE)</option>
-                        <option value="gpt2">GPT-2 (r50k_base BPE)</option>
+                        <option value="deepseek">DeepSeek V3 / R1 (Multi-byte BPE)</option>
+                        <option value="claude">Claude 3.5 Sonnet (Anthropic BPE)</option>
                         <option value="llama3">Llama 3 / Mistral (128k BPE)</option>
+                        <option value="codellama">CodeLlama / StarCoder (Code BPE)</option>
+                        <option value="gpt2">GPT-2 (r50k_base BPE)</option>
+                        <option value="bert">BERT / RoBERTa (WordPiece)</option>
                         <option value="custom">Custom Trained BPE</option>
                     </select>
                 </div>
@@ -45,7 +49,7 @@
             <div class="nav-right">
                 <button id="btn-export-json" class="nav-btn">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                    Export Model
+                    Export JSON
                 </button>
                 <label class="nav-btn">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -68,8 +72,8 @@
                         <span class="sample-label">Presets:</span>
                         <button class="chip" data-sample="multilingual">Hindi + English</button>
                         <button class="chip" data-sample="code">Python Code</button>
+                        <button class="chip" data-sample="deepseek">DeepSeek Prompt</button>
                         <button class="chip" data-sample="math">Math & Logic</button>
-                        <button class="chip" data-sample="classic">BPE Classic</button>
                     </div>
                 </div>
 
@@ -121,9 +125,9 @@
                 <!-- Tabs Navigation -->
                 <div class="tabs-nav">
                     <button class="tab-btn active" data-tab="tab-tokens">Token Table</button>
+                    <button class="tab-btn" data-tab="tab-diff">Model Benchmark</button>
                     <button class="tab-btn" data-tab="tab-tree">Merge Tree</button>
-                    <button class="tab-btn" data-tab="tab-diff">Multi-Model Diff</button>
-                    <button class="tab-btn" data-tab="tab-analytics">Analytics & Cost</button>
+                    <button class="tab-btn" data-tab="tab-analytics">Cost & Analytics</button>
                     <button class="tab-btn" data-tab="tab-trainer">BPE Trainer</button>
                     <button class="tab-btn" data-tab="tab-vocab">Vocab</button>
                 </div>
@@ -147,21 +151,21 @@
                     </div>
                 </div>
 
-                <!-- Tab 2: Visual BPE Merge Hierarchy Tree -->
+                <!-- Tab 2: Multi-Model Tokenizer Diff -->
+                <div id="tab-diff" class="tab-content">
+                    <div class="benchmark-box">
+                        <span class="box-title">8-Model Comparative Tokenization Benchmark</span>
+                        <div class="benchmark-list" id="benchmark-list"></div>
+                    </div>
+                </div>
+
+                <!-- Tab 3: Visual BPE Merge Hierarchy Tree -->
                 <div id="tab-tree" class="tab-content">
                     <div class="tree-box">
                         <span class="box-title">Subword Merge Hierarchy Tree</span>
                         <div class="tree-container" id="tree-container">
                             <span class="placeholder-text">Train custom BPE or type text to view subword hierarchy...</span>
                         </div>
-                    </div>
-                </div>
-
-                <!-- Tab 3: Multi-Model Tokenizer Diff -->
-                <div id="tab-diff" class="tab-content">
-                    <div class="benchmark-box">
-                        <span class="box-title">Side-by-Side Model Tokenization Comparison</span>
-                        <div class="benchmark-list" id="benchmark-list"></div>
                     </div>
                 </div>
 

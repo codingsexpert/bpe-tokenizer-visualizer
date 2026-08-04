@@ -1,5 +1,5 @@
 // =====================================================================
-//  TokenViz Masterpiece Studio - BPE Engine & Heatmap Controller
+//  TokenViz Masterpiece Studio - 8-Model BPE Engine & Benchmark Controller
 // =====================================================================
 
 const PASTEL_PALETTE = [
@@ -44,8 +44,12 @@ const { byteToUnicode } = getBytesToUnicode();
 const REGEX_PATTERNS = {
     gpt4o: /[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]*[\p{Ll}\p{Lm}\p{Lo}\p{M}]+(?i:'s|'t|'re|'ve|'m|'ll|'d)?|[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]+[\p{Ll}\p{Lm}\p{Lo}\p{M}]*(?i:'s|'t|'re|'ve|'m|'ll|'d)?|\p{N}{1,3}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+/gu,
     gpt4: /(?:'[sS]|'[tT]|'[rR][eE]|'[vV][eE]|'[mM]|'[lL][lL]|'[dD])|[^r\n\p{L}\p{N}]?\p{L}+|\p{N}{1,3}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+/gu,
-    gpt2: /'s|'t|'re|'ve|'m|'ll|'d| ?\w+| ?[^\s\w]+|\s+(?!\S)|\s+/gu,
+    deepseek: /[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]*[\p{Ll}\p{Lm}\p{Lo}\p{M}]+(?i:'s|'t|'re|'ve|'m|'ll|'d)?|[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]+[\p{Ll}\p{Lm}\p{Lo}\p{M}]*(?i:'s|'t|'re|'ve|'m|'ll|'d)?|\p{N}{1,3}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+/gu,
+    claude: /[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]*[\p{Ll}\p{Lm}\p{Lo}\p{M}]+(?i:'s|'t|'re|'ve|'m|'ll|'d)?|[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]+[\p{Ll}\p{Lm}\p{Lo}\p{M}]*(?i:'s|'t|'re|'ve|'m|'ll|'d)?|\p{N}{1,3}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+/gu,
     llama3: /[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]*[\p{Ll}\p{Lm}\p{Lo}\p{M}]+(?i:'s|'t|'re|'ve|'m|'ll|'d)?|[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]+[\p{Ll}\p{Lm}\p{Lo}\p{M}]*(?i:'s|'t|'re|'ve|'m|'ll|'d)?|\p{N}{1,3}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+/gu,
+    codellama: /\t| +|[a-zA-Z_]\w*|\d+|[^\s\w]/g,
+    gpt2: /'s|'t|'re|'ve|'m|'ll|'d| ?\w+| ?[^\s\w]+|\s+(?!\S)|\s+/gu,
+    bert: /\w+|[^\s\w]/g,
     custom: /'s|'t|'re|'ve|'m|'ll|'d| ?\w+| ?[^\s\w]+|\s+(?!\S)|\s+/gu
 };
 
@@ -215,8 +219,8 @@ const tokenizer = new JSBPETokenizer();
 const SAMPLES = {
     multilingual: `Tokenizers process text into subword units for LLMs. नमस्ते दुनिया!`,
     code: `def bpe_tokenize(prompt):\n    tokens = tokenizer.encode(prompt)\n    return [t.id for t in tokens]`,
-    math: `lim_{x -> 0} (sin x / x) = 1.0  # Calculus identity`,
-    classic: `low low low low low lower lower newest newest newest`
+    deepseek: `<|Reasoning_Start|> Analyze token density & subword boundary efficiency <|Reasoning_End|>`,
+    math: `lim_{x -> 0} (sin x / x) = 1.0  # Calculus identity`
 };
 
 // DOM Elements
@@ -393,11 +397,11 @@ function runTokenization() {
         `;
     }).join('');
 
-    // Render Compression Heatmap (Green = High Compression, Amber/Red = Low)
+    // Render Compression Heatmap
     heatmapBox.innerHTML = tokens.map(tok => {
         const charLen = tok.len || 1;
-        let heatColor = '#fee2e2'; // Low compression (1 char)
-        if (charLen >= 4) heatColor = '#dcfce7';      // High compression (4+ chars)
+        let heatColor = '#fee2e2'; // Low compression
+        if (charLen >= 4) heatColor = '#dcfce7';      // High compression
         else if (charLen >= 2) heatColor = '#fef9c3'; // Medium compression
 
         const safeText = tok.displayStr.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -458,10 +462,14 @@ function renderMergeTree() {
 
 function renderBenchmarkComparison(text) {
     const engines = [
-        { name: 'GPT-4o (o200k_base)', key: 'gpt4o' },
-        { name: 'GPT-4 / GPT-3.5 (cl100k_base)', key: 'gpt4' },
-        { name: 'GPT-2 (r50k_base)', key: 'gpt2' },
-        { name: 'Llama 3 (128k)', key: 'llama3' }
+        { name: 'GPT-4o (o200k_base BPE)', key: 'gpt4o' },
+        { name: 'GPT-4 / GPT-3.5 (cl100k_base BPE)', key: 'gpt4' },
+        { name: 'DeepSeek V3 / R1 (Multi-byte BPE)', key: 'deepseek' },
+        { name: 'Claude 3.5 Sonnet (Anthropic BPE)', key: 'claude' },
+        { name: 'Llama 3 / Mistral (128k BPE)', key: 'llama3' },
+        { name: 'CodeLlama / StarCoder (Code BPE)', key: 'codellama' },
+        { name: 'GPT-2 (r50k_base BPE)', key: 'gpt2' },
+        { name: 'BERT / RoBERTa (WordPiece)', key: 'bert' }
     ];
 
     const results = engines.map(eng => {
