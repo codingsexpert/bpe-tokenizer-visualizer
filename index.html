@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Byte-Level BPE Tokenizer Visualizer</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="logo-area">
+                <div class="logo-icon">⚡</div>
+                <div>
+                    <h1>BPE Tokenizer Visualizer</h1>
+                    <p class="subtitle">Byte-Level Subword Tokenization Playground (GPT-4 Style)</p>
+                </div>
+            </div>
+            <div class="preset-badges">
+                <button class="preset-btn active" data-preset="multilingual">Hindi + English</button>
+                <button class="preset-btn" data-preset="classic">Classic (low / lower)</button>
+                <button class="preset-btn" data-preset="emojis">Emojis & Code</button>
+            </div>
+        </header>
+
+        <!-- Stats Bar -->
+        <section class="stats-grid">
+            <div class="stat-card">
+                <span class="stat-label">Characters</span>
+                <span class="stat-value" id="stat-chars">0</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Tokens</span>
+                <span class="stat-value accent" id="stat-tokens">0</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Compression Ratio</span>
+                <span class="stat-value" id="stat-ratio">0.00 chars/token</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Vocab Size</span>
+                <span class="stat-value" id="stat-vocab">256</span>
+            </div>
+        </section>
+
+        <!-- Main Workspace (Grid layout) -->
+        <main class="main-grid">
+            <!-- Left Panel: Training & Controls -->
+            <section class="panel-card controls-card">
+                <div class="card-header">
+                    <h2>1. Model Training & Settings</h2>
+                    <span class="badge" id="train-status">Ready</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="train-text">Training Corpus Text:</label>
+                    <textarea id="train-text" rows="5" placeholder="Enter text to train BPE vocabulary..."></textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group flex-1">
+                        <label for="target-vocab">Target Vocab Size:</label>
+                        <input type="number" id="target-vocab" value="300" min="260" max="1000" step="10">
+                    </div>
+                    <div class="form-group flex-1">
+                        <label for="max-merges">Max Merges:</label>
+                        <input type="number" id="max-merges" value="44" readonly>
+                    </div>
+                </div>
+
+                <button id="btn-train" class="primary-btn">
+                    <span>Train Tokenizer</span>
+                    <div class="spinner hidden" id="train-spinner"></div>
+                </button>
+
+                <div class="merges-log-section">
+                    <h3>Learned Merges (<span id="merges-count">0</span>)</h3>
+                    <div class="merges-list" id="merges-list">
+                        <div class="empty-state">No merges trained yet. Click "Train Tokenizer".</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Panel: Live Tokenizer Playground -->
+            <section class="panel-card playground-card">
+                <div class="card-header">
+                    <h2>2. Live Tokenizer Playground</h2>
+                    <div class="toggle-group">
+                        <label class="switch-label">
+                            <input type="checkbox" id="show-ids-toggle" checked>
+                            <span>Show IDs</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="test-text">Input Text to Tokenize:</label>
+                    <textarea id="test-text" rows="4" placeholder="Type text here to see real-time subword tokenization..."></textarea>
+                </div>
+
+                <!-- Token Pills Container -->
+                <div class="output-group">
+                    <div class="output-header">
+                        <label>Subword Tokens:</label>
+                        <span class="hint">Hover over tokens to highlight byte details</span>
+                    </div>
+                    <div class="token-pills-container" id="token-pills">
+                        <div class="empty-state">Type text above to see colored subword tokens...</div>
+                    </div>
+                </div>
+
+                <!-- Token IDs Output -->
+                <div class="output-group">
+                    <div class="output-header">
+                        <label>Token ID Array:</label>
+                        <button id="btn-copy-ids" class="icon-btn" title="Copy Token IDs">📋 Copy</button>
+                    </div>
+                    <div class="ids-box" id="token-ids-output">[ ]</div>
+                </div>
+
+                <!-- Decoded Output -->
+                <div class="output-group">
+                    <div class="output-header">
+                        <label>Decoded Text Verification:</label>
+                        <span class="status-pass" id="roundtrip-status">✓ Exact Match</span>
+                    </div>
+                    <div class="decoded-box" id="decoded-output"></div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Vocabulary Table Section -->
+        <section class="panel-card vocab-card">
+            <div class="card-header">
+                <h2>3. Learned Vocabulary Explorer</h2>
+                <input type="text" id="vocab-search" placeholder="🔍 Search token by string or ID..." class="search-input">
+            </div>
+            <div class="vocab-table-wrapper">
+                <table class="vocab-table">
+                    <thead>
+                        <tr>
+                            <th>Token ID</th>
+                            <th>Token Representation</th>
+                            <th>Raw Bytes (Hex)</th>
+                            <th>Type</th>
+                        </tr>
+                    </thead>
+                    <tbody id="vocab-table-body">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
