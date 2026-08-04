@@ -2,19 +2,19 @@
 //  TokenViz Masterpiece Studio - Production Precision BPE Engine
 // =====================================================================
 
-const PASTEL_PALETTE = [
-    '#fef2f2', '#fefce8', '#f0fdf4', '#eff6ff', '#faf5ff',
-    '#fff7ed', '#f5f3ff', '#fdf2f8', '#ecfdf5', '#f0fdfa',
-    '#e0f2fe', '#e0e7ff', '#fef9c3', '#ecfccb', '#fae8ff'
+const TOKEN_COLOR_PALETTE = [
+    { bg: 'rgba(99, 102, 241, 0.18)', border: '#6366f1', text: '#312e81' },
+    { bg: 'rgba(236, 72, 153, 0.18)', border: '#ec4899', text: '#831843' },
+    { bg: 'rgba(34, 197, 94, 0.18)', border: '#22c55e', text: '#14532d' },
+    { bg: 'rgba(245, 158, 11, 0.18)', border: '#f59e0b', text: '#78350f' },
+    { bg: 'rgba(168, 85, 247, 0.18)', border: '#a855f7', text: '#581c87' },
+    { bg: 'rgba(6, 182, 212, 0.18)', border: '#06b6d4', text: '#164e63' },
+    { bg: 'rgba(234, 88, 12, 0.18)', border: '#ea580c', text: '#7c2d12' },
+    { bg: 'rgba(16, 185, 129, 0.18)', border: '#10b981', text: '#064e3b' }
 ];
 
-function stringToColor(str) {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-        hash = str.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    const index = Math.abs(hash) % PASTEL_PALETTE.length;
-    return PASTEL_PALETTE[index];
+function getTokenColor(idx) {
+    return TOKEN_COLOR_PALETTE[idx % TOKEN_COLOR_PALETTE.length];
 }
 
 function getBytesToUnicode() {
@@ -209,7 +209,6 @@ class JSBPETokenizer {
             parts.splice(bestIdx + 1, 1);
         }
 
-        // Subword Fallback: Merge unmerged character fragments into natural subwords (max 4-6 chars per subword)
         if (parts.length > 2) {
             const mergedParts = [];
             let current = '';
@@ -293,8 +292,6 @@ class JSBPETokenizer {
             if (!chunk) continue;
 
             const bytes = Array.from(encoder.encode(chunk));
-            
-            // Subword BPE encoding
             tokens = tokens.concat(this.encodeChunk(bytes, maxMergeStep, item.start));
         }
         return tokens;
@@ -438,7 +435,7 @@ function runTraining() {
 function formatSubword(str) {
     return Array.from(str).map(char => {
         const code = char.charCodeAt(0);
-        if (code === 32) return '␣'; // Render spaces cleanly as ␣
+        if (code === 32) return '␣';
         return byteToUnicode[code] || char;
     }).join('');
 }
@@ -450,18 +447,18 @@ function runTokenization() {
     const tokens = tokenizer.encode(text, null, maxMergeStep);
 
     if (tokens.length === 0) {
-        if (inlineTokenView) inlineTokenView.innerHTML = `<span class="placeholder-text">Type text above to see inline token boundaries...</span>`;
+        if (inlineTokenView) inlineTokenView.innerHTML = `<span class="placeholder-text">Type text above to see realistic subword tokenization...</span>`;
         tokensBox.innerHTML = `<span class="placeholder-text">Type text above...</span>`;
         heatmapBox.innerHTML = `<span class="placeholder-text">Type text above to view compression heatmap...</span>`;
         sequenceDisplay.innerText = `[ ]`;
     } else {
-        // Render Interactive Inline Token Text Viewport
+        // Render Realistic In-Text Token Viewport with Alternating Palette & Tooltips
         if (inlineTokenView) {
             inlineTokenView.innerHTML = tokens.map((t, idx) => {
-                const color = stringToColor(t.displayStr);
+                const palette = getTokenColor(idx);
                 const formattedText = formatSubword(t.displayStr);
                 return `
-                    <span class="token-inline-span" data-token-idx="${idx}" style="background-color: ${color}" title="Token #${idx + 1} | ID: ${t.id} | Chars: ${t.startIdx}..${t.endIdx}">
+                    <span class="token-inline-span" data-token-idx="${idx}" style="background-color: ${palette.bg}; border-color: ${palette.border}; color: ${palette.text}" title="Token #${idx + 1}&#10;String: '${formattedText}'&#10;ID: ${t.id}&#10;Chars: ${t.startIdx}..${t.endIdx}&#10;Hex: ${t.hex}">
                         <span>${escapeHtml(formattedText)}</span>
                         <span class="token-inline-idx">#${idx + 1}</span>
                     </span>
@@ -471,10 +468,10 @@ function runTokenization() {
 
         // Render Subword Badges
         tokensBox.innerHTML = tokens.map((t, idx) => {
-            const color = stringToColor(t.displayStr);
+            const palette = getTokenColor(idx);
             const formattedText = formatSubword(t.displayStr);
             return `
-                <div class="subword-badge" data-token-idx="${idx}" style="background-color: ${color}" title="Token ID: ${t.id} | Chars: ${t.startIdx}..${t.endIdx} | Bytes: ${t.hex}">
+                <div class="subword-badge" data-token-idx="${idx}" style="background-color: ${palette.bg}; border-color: ${palette.border}; color: ${palette.text}" title="Token ID: ${t.id} | Chars: ${t.startIdx}..${t.endIdx} | Bytes: ${t.hex}">
                     <span>${escapeHtml(formattedText)}</span>
                     <span class="subword-id">${t.id}</span>
                 </div>
