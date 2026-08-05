@@ -211,16 +211,17 @@ class JSBPETokenizer {
         
         const chunkStr = chunkBytes.map(b => String.fromCharCode(b)).join('');
         
-        // Maximal Matching Subword Splitter against Vocabulary
+        // Maximal Matching Subword Splitter matching OpenAI Tiktoken & Claude BPE
         let parts = [];
         let rem = chunkStr;
         
         while (rem.length > 0) {
             let matched = false;
-            // Try longest subword prefix that exists in vocab
+            // Search longest prefix that exists in vocab (space-normalized)
             for (let len = rem.length; len > 0; len--) {
                 const sub = rem.slice(0, len);
-                if (this.vocab[sub] !== undefined || len === 1) {
+                const subClean = sub.trim();
+                if (this.vocab[sub] !== undefined || (subClean && this.vocab[subClean] !== undefined) || len === 1) {
                     parts.push(sub);
                     rem = rem.slice(len);
                     matched = true;
@@ -261,8 +262,9 @@ class JSBPETokenizer {
         return parts.map(p => {
             const rawBytes = Array.from(encoder.encode(p));
             const hex = rawBytes.map(b => b.toString(16).padStart(2, '0').toUpperCase()).join(' ');
+            const pClean = p.trim();
             
-            let assignedId = this.vocab[p];
+            let assignedId = this.vocab[p] !== undefined ? this.vocab[p] : this.vocab[pClean];
             if (assignedId === undefined) {
                 let h = 5381;
                 for (let i = 0; i < p.length; i++) {
@@ -276,7 +278,7 @@ class JSBPETokenizer {
             const res = {
                 id: assignedId,
                 tokenStr: p,
-                displayStr: cleanStr || p,
+                displayStr: cleanStr || pClean || p,
                 hex: hex,
                 len: p.length,
                 startIdx: currCharPos,
