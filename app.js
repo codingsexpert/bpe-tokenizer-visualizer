@@ -533,6 +533,11 @@ function runTokenization() {
     const vstatChars = el('vstat-chars');
     const vstatRatio = el('vstat-ratio');
 
+    const hmTokens = el('hm-tokens');
+    const hmChars = el('hm-chars');
+    const hmRatio = el('hm-ratio');
+    const hmCost = el('hm-cost');
+
     const mTokens = el('m-tokens');
     const mChars = el('m-chars');
     const mRatio = el('m-ratio');
@@ -543,6 +548,11 @@ function runTokenization() {
     if (vstatTokens) vstatTokens.innerText = tokenCount;
     if (vstatChars) vstatChars.innerText = charCount;
     if (vstatRatio) vstatRatio.innerText = ratio;
+
+    if (hmTokens) hmTokens.innerText = tokenCount;
+    if (hmChars) hmChars.innerText = charCount;
+    if (hmRatio) hmRatio.innerText = ratio;
+    if (hmCost) hmCost.innerText = `$${cost}`;
 
     if (mTokens) mTokens.innerText = tokenCount;
     if (mChars) mChars.innerText = charCount;
