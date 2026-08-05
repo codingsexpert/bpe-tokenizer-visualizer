@@ -17,11 +17,23 @@ function getTokenColor(idx) {
     return TOKEN_COLOR_PALETTE[idx % TOKEN_COLOR_PALETTE.length];
 }
 
-// Aggressive Sanitizer: Strips ALL leading/trailing/internal spaces, ␣, Ġ,   & unicode space markers
+// Aggressive Sanitizer: Strips ALL space markers (␣, Ġ,  , \u2581) AND appended token ID numbers (a97 -> a, b276 -> b)
 function sanitizeTokenStr(str) {
     if (!str) return '';
-    const cleaned = str.replace(/[\s\u2581\u0120\u2423␣_]+/g, '');
-    return cleaned || str;
+    // 1. Remove all space markers: spaces, ␣, Ġ, \u2581, \u0120, \u2423, _
+    let cleaned = str.replace(/[\s\u2581\u0120\u2423␣_]+/g, '').trim();
+    
+    // 2. Strip any appended token IDs from letter subwords (e.g. "a97" -> "a", "b276" -> "b", "c423" -> "c")
+    if (/^[a-zA-Z]+\d+$/.test(cleaned)) {
+        cleaned = cleaned.replace(/\d+$/, '');
+    }
+    
+    // 3. If cleaned is a standalone number like "32" or "276" that came from a space token, return empty string
+    if (/^\d+$/.test(cleaned) && (str.includes(' ') || str.includes('␣') || str.includes('\u2581') || str.includes('\u0120') || str.includes('\u2423'))) {
+        return '';
+    }
+
+    return cleaned;
 }
 
 // Official Regex Patterns matching OpenAI tiktoken & Anthropic Claude
@@ -479,17 +491,18 @@ function runTokenization() {
         if (heatmapBox) heatmapBox.innerHTML = `<span class="placeholder-text">Type text above to view compression heatmap...</span>`;
         if (sequenceDisplay) sequenceDisplay.innerText = `[ ]`;
     } else {
-        // Render Clean Token Chips (ONLY Pure Subword Text Name, NO Space Symbols)
+        // Render Clean Token Chips (ONLY Pure Subword Text Name, NO Space Symbols, NO Token IDs)
         if (inlineTokenView) {
             inlineTokenView.innerHTML = tokens.map((t, idx) => {
                 const palette = getTokenColor(idx);
                 const str = sanitizeTokenStr(t.displayStr);
+                if (!str) return '';
                 return `
                     <span class="token-inline-span" data-token-idx="${idx}" style="background-color: ${palette.bg}; border-color: ${palette.border}; color: ${palette.text}">
                         <span>${escapeHtml(str)}</span>
                     </span>
                 `;
-            }).join('');
+            }).filter(Boolean).join('');
         }
 
         // Render Inspector Subword Cards (ONLY Pure Subword Text Name)
@@ -497,12 +510,13 @@ function runTokenization() {
             tokensBox.innerHTML = tokens.map((t, idx) => {
                 const palette = getTokenColor(idx);
                 const str = sanitizeTokenStr(t.displayStr);
+                if (!str) return '';
                 return `
                     <div class="subword-badge" data-token-idx="${idx}" style="background-color: ${palette.bg}; border-color: ${palette.border}; color: ${palette.text}">
                         <span>${escapeHtml(str)}</span>
                     </div>
                 `;
-            }).join('');
+            }).filter(Boolean).join('');
         }
 
         // Heatmap
@@ -512,12 +526,13 @@ function runTokenization() {
                 const bg = isMerged ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.12)';
                 const border = isMerged ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.25)';
                 const str = sanitizeTokenStr(t.displayStr);
+                if (!str) return '';
                 return `
                     <span class="heatmap-pill" style="background: ${bg}; border-color: ${border}">
                         <span>${escapeHtml(str)}</span>
                     </span>
                 `;
-            }).join('');
+            }).filter(Boolean).join('');
         }
 
         if (sequenceDisplay) sequenceDisplay.innerText = `[ ${tokens.map(t => t.id).join(', ')} ]`;
