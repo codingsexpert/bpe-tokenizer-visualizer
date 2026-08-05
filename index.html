@@ -12,50 +12,57 @@
 </head>
 <body>
     <div class="studio-app">
-        <!-- Top Navbar -->
+        <!-- Top Responsive Navbar -->
         <header class="navbar">
-            <div class="brand">
-                <div class="brand-logo">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                        <polygon points="12 2 2 7 12 12 22 7 12 2"/>
-                        <polyline points="2 17 12 22 22 17"/>
-                        <polyline points="2 12 17 22 12"/>
-                    </svg>
+            <div class="navbar-container">
+                <!-- Brand Left -->
+                <div class="brand">
+                    <div class="brand-logo">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+                            <polyline points="2 17 12 22 22 17"/>
+                            <polyline points="2 12 12 17 22 12"/>
+                        </svg>
+                    </div>
+                    <div class="brand-meta">
+                        <span class="brand-name">TokenViz</span>
+                        <span class="brand-tag">Studio</span>
+                    </div>
                 </div>
-                <div class="brand-meta">
-                    <span class="brand-name">TokenViz Studio</span>
-                    <span class="brand-tag">v13.0 Premium</span>
-                </div>
-            </div>
 
-            <!-- Global Model Engine Switcher -->
-            <div class="nav-middle">
-                <div class="engine-selector">
-                    <span class="engine-label">Model Engine:</span>
-                    <select id="engine-select" class="nav-select">
-                        <option value="gpt4o">GPT-4o (o200k_base BPE)</option>
-                        <option value="gpt4">GPT-4 / GPT-3.5 (cl100k_base BPE)</option>
-                        <option value="deepseek">DeepSeek V3 / R1 (Multi-byte BPE)</option>
-                        <option value="claude">Claude 3.5 Sonnet (Anthropic BPE)</option>
-                        <option value="llama3">Llama 3 / Mistral (128k BPE)</option>
-                        <option value="codellama">CodeLlama / StarCoder (Code BPE)</option>
-                        <option value="gpt2">GPT-2 (r50k_base BPE)</option>
-                        <option value="bert">BERT / RoBERTa (WordPiece)</option>
-                        <option value="custom">Custom Trained BPE</option>
-                    </select>
+                <!-- Center Model Selector -->
+                <div class="nav-center">
+                    <div class="engine-selector">
+                        <svg class="engine-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                        </svg>
+                        <select id="engine-select" class="nav-select">
+                            <option value="gpt4o">GPT-4o (o200k_base BPE)</option>
+                            <option value="gpt4">GPT-4 / GPT-3.5 (cl100k_base)</option>
+                            <option value="deepseek">DeepSeek V3 / R1 BPE</option>
+                            <option value="claude">Claude 3.5 Sonnet BPE</option>
+                            <option value="llama3">Llama 3 / Mistral (128k)</option>
+                            <option value="codellama">CodeLlama / StarCoder</option>
+                            <option value="gpt2">GPT-2 (r50k_base BPE)</option>
+                            <option value="bert">BERT WordPiece</option>
+                            <option value="custom">Custom Trained BPE</option>
+                        </select>
+                    </div>
                 </div>
-            </div>
 
-            <div class="nav-right">
-                <button id="btn-export-json" class="nav-btn">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                    Export JSON
-                </button>
-                <label class="nav-btn">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                    Import Model
-                    <input type="file" id="btn-import-json" accept=".json" class="hidden">
-                </label>
+                <!-- Right Actions -->
+                <div class="nav-right">
+                    <button id="btn-export-json" class="nav-btn" title="Export Model JSON">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        <span class="btn-text">Export</span>
+                    </button>
+                    <label class="nav-btn" title="Import Model JSON">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        <span class="btn-text">Import</span>
+                        <input type="file" id="btn-import-json" accept=".json" class="hidden">
+                    </label>
+                </div>
             </div>
         </header>
 
