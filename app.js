@@ -210,8 +210,6 @@ class JSBPETokenizer {
             parts.splice(bestIdx + 1, 1);
         }
 
-        // Subword Fallback Aggregator: If unmerged character fragments remain inside a single pre-tokenized word,
-        // merge them into 1 single token if chunk length <= 8, or max 2 subwords if longer.
         if (parts.length > 1) {
             const mergedWord = parts.join('');
             parts = [mergedWord];
@@ -409,11 +407,8 @@ function runTraining() {
 }
 
 function formatSubword(str) {
-    return Array.from(str).map(char => {
-        const code = char.charCodeAt(0);
-        if (code === 32) return '␣';
-        return byteToUnicode[code] || char;
-    }).join('');
+    // Preserve natural spaces cleanly without ugly special symbol '␣'
+    return str;
 }
 
 function runTokenization() {
@@ -437,14 +432,14 @@ function runTokenization() {
         if (heatmapBox) heatmapBox.innerHTML = `<span class="placeholder-text">Type text above to view compression heatmap...</span>`;
         if (sequenceDisplay) sequenceDisplay.innerText = `[ ]`;
     } else {
-        // Render Subword Token Stream Studio Card
+        // Render Clean Natural Subword Tokens
         if (inlineTokenView) {
             inlineTokenView.innerHTML = tokens.map((t, idx) => {
                 const palette = getTokenColor(idx);
                 const formattedText = formatSubword(t.displayStr);
                 return `
                     <span class="token-inline-span" data-token-idx="${idx}" style="background-color: ${palette.bg}; border-color: ${palette.border}; color: ${palette.text}" title="Token #${idx + 1}&#10;Token ID: ${t.id}&#10;Subword: '${formattedText}'&#10;Char Pos: ${t.startIdx}..${t.endIdx}&#10;Hex: ${t.hex}">
-                        <span>${escapeHtml(formattedText)}</span>
+                        <span style="white-space: pre;">${escapeHtml(formattedText)}</span>
                         <span class="token-inline-id">${t.id}</span>
                     </span>
                 `;
@@ -458,7 +453,7 @@ function runTokenization() {
                 const formattedText = formatSubword(t.displayStr);
                 return `
                     <div class="subword-badge" data-token-idx="${idx}" style="background-color: ${palette.bg}; border-color: ${palette.border}; color: ${palette.text}" title="Token ID: ${t.id} | Chars: ${t.startIdx}..${t.endIdx} | Bytes: ${t.hex}">
-                        <span>${escapeHtml(formattedText)}</span>
+                        <span style="white-space: pre;">${escapeHtml(formattedText)}</span>
                         <span class="subword-id">${t.id}</span>
                     </div>
                 `;
@@ -474,7 +469,7 @@ function runTokenization() {
                 const formattedText = formatSubword(t.displayStr);
                 return `
                     <span class="heatmap-pill" style="background: ${bg}; border-color: ${border}">
-                        ${escapeHtml(formattedText)}
+                        <span style="white-space: pre;">${escapeHtml(formattedText)}</span>
                     </span>
                 `;
             }).join('');
@@ -586,7 +581,7 @@ function renderTokensTable(tokens) {
             <tr data-token-idx="${idx}">
                 <td>${idx + 1}</td>
                 <td><strong>${t.id}</strong></td>
-                <td><code style="font-family: var(--font-code); color: var(--accent-indigo)">'${escapeHtml(formattedText)}'</code></td>
+                <td><code style="font-family: var(--font-code); color: var(--accent-indigo); white-space: pre;">'${escapeHtml(formattedText)}'</code></td>
                 <td><code style="font-family: var(--font-code); color: var(--text-muted)">${t.hex}</code></td>
                 <td><code style="font-family: var(--font-code); font-size: 0.75rem;">${t.startIdx}..${t.endIdx}</code></td>
             </tr>
@@ -608,8 +603,8 @@ function renderTree(tokens) {
         const mergedStr = p1Str + p2Str;
         return `
             <div class="tree-node">
-                <span>Rank #${idx + 1}: ('${escapeHtml(p1Str)}' + '${escapeHtml(p2Str)}')</span>
-                <strong style="color: var(--accent-indigo)">➔ '${escapeHtml(mergedStr)}'</strong>
+                <span>Rank #${idx + 1}: ('<span style="white-space: pre;">${escapeHtml(p1Str)}</span>' + '<span style="white-space: pre;">${escapeHtml(p2Str)}</span>')</span>
+                <strong style="color: var(--accent-indigo)">➔ '<span style="white-space: pre;">${escapeHtml(mergedStr)}</span>'</strong>
             </div>
         `;
     }).join('');
@@ -659,8 +654,8 @@ function renderMerges(mergeLogs) {
 
     mergesList.innerHTML = mergeLogs.map(log => `
         <div class="merge-item">
-            <span>'${escapeHtml(log.p1)}' + '${escapeHtml(log.p2)}'</span>
-            <span>➔ '${escapeHtml(log.merged)}'</span>
+            <span>'<span style="white-space: pre;">${escapeHtml(log.p1)}</span>' + '<span style="white-space: pre;">${escapeHtml(log.p2)}</span>'</span>
+            <span>➔ '<span style="white-space: pre;">${escapeHtml(log.merged)}</span>'</span>
         </div>
     `).join('');
 }
@@ -678,7 +673,7 @@ function renderVocabTable() {
             rows.push(`
                 <tr>
                     <td><strong>${id}</strong></td>
-                    <td><code>'${escapeHtml(displayStr)}'</code></td>
+                    <td><code style="white-space: pre;">'${escapeHtml(displayStr)}'</code></td>
                     <td><span class="vstat">${id < 256 ? 'Byte' : 'BPE Subword'}</span></td>
                 </tr>
             `);
