@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TokenViz Studio Pro - Advanced LLM BPE Tokenizer Visualizer</title>
+    <title>TokenViz Studio Pro - Advanced LLM BPE Tokenizer & Guardrails Studio</title>
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -25,7 +25,7 @@
                         </svg>
                     </div>
                     <span class="brand-name">TokenViz</span>
-                    <span class="brand-badge">Studio</span>
+                    <span class="brand-badge">Studio Pro</span>
                 </div>
 
                 <!-- Center Model Selector Pill -->
@@ -69,18 +69,18 @@
             <!-- Hero Workspace Section -->
             <section class="hero-workspace">
                 <div class="hero-header">
-                    <h1 class="studio-title">LLM Tokenization Studio</h1>
-                    <p class="studio-subtitle">Inspect real-time BPE subword encodings across major LLM architectures</p>
+                    <h1 class="studio-title">LLM Tokenization & Guardrails Studio</h1>
+                    <p class="studio-subtitle">Inspect real-time BPE subword encodings, token limits, and AI safety guardrails</p>
                 </div>
 
                 <!-- Seamless Canvas Workspace -->
                 <div class="canvas-panel">
                     <!-- Text Area Canvas -->
                     <div class="input-canvas">
-                        <textarea id="prompt-input" rows="3" placeholder="Type or paste any text to visualize subwords..."></textarea>
+                        <textarea id="prompt-input" rows="3" placeholder="Type or paste any text to visualize subwords and run guardrails scan..."></textarea>
                     </div>
 
-                    <!-- Live Stats Bar -->
+                    <!-- Live Stats Bar with Guardrails Status Badge -->
                     <div class="stats-strip">
                         <div class="stat-item">
                             <span class="stat-num" id="hm-tokens">0</span>
@@ -100,6 +100,10 @@
                         <div class="stat-item">
                             <span class="stat-num" id="hm-cost">$0.0000</span>
                             <span class="stat-tag">Est. Cost</span>
+                        </div>
+                        <div class="stat-divider"></div>
+                        <div class="stat-item">
+                            <span id="guardrail-status-pill" class="guardrail-pill safe">🛡️ SAFE (Pass)</span>
                         </div>
                     </div>
 
@@ -141,6 +145,7 @@
                         <div class="panel-head nav-head">
                             <nav class="tabs-nav">
                                 <button class="tab-btn active" data-tab="tab-tokens">Token Table</button>
+                                <button class="tab-btn" data-tab="tab-guardrails">🛡️ Guardrails</button>
                                 <button class="tab-btn" data-tab="tab-diff">Model Benchmark</button>
                                 <button class="tab-btn" data-tab="tab-tree">Merge Tree</button>
                                 <button class="tab-btn" data-tab="tab-analytics">Cost & Context</button>
@@ -167,6 +172,70 @@
                                             <tr><td colspan="5" class="empty-cell">No tokens generated</td></tr>
                                         </tbody>
                                     </table>
+                                </div>
+                            </div>
+
+                            <!-- Tab Guardrails: AI Safety & Security Scanner -->
+                            <div id="tab-guardrails" class="tab-content">
+                                <div class="guardrails-dashboard">
+                                    <div class="score-card">
+                                        <div class="score-header">
+                                            <span>Security Audit Score</span>
+                                            <strong id="gr-score">100%</strong>
+                                        </div>
+                                        <div class="progress-track">
+                                            <div class="progress-fill green" id="gr-score-bar" style="width: 100%;"></div>
+                                        </div>
+                                    </div>
+
+                                    <div class="guardrail-checks-list">
+                                        <div class="gr-check-item" id="gc-tokens">
+                                            <div class="check-icon pass">✓</div>
+                                            <div class="check-meta">
+                                                <strong>Token Limit & Context Window Guardrail</strong>
+                                                <span id="gc-tokens-msg">Within 4,096 token limit</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="gr-check-item" id="gc-injection">
+                                            <div class="check-icon pass">✓</div>
+                                            <div class="check-meta">
+                                                <strong>Prompt Injection & Jailbreak Scanner</strong>
+                                                <span id="gc-injection-msg">No jailbreak patterns detected</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="gr-check-item" id="gc-pii">
+                                            <div class="check-icon pass">✓</div>
+                                            <div class="check-meta">
+                                                <strong>PII & API Key Secret Leak Scanner</strong>
+                                                <span id="gc-pii-msg">No API keys or sensitive PII found</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="gr-check-item" id="gc-special">
+                                            <div class="check-icon pass">✓</div>
+                                            <div class="check-meta">
+                                                <strong>Special Token Chat Template Injection</strong>
+                                                <span id="gc-special-msg">No special system tags detected</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="gr-check-item" id="gc-spam">
+                                            <div class="check-icon pass">✓</div>
+                                            <div class="check-meta">
+                                                <strong>Glitch Token & Character Spam Scanner</strong>
+                                                <span id="gc-spam-msg">Clean character sequence</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="threat-console">
+                                        <label>Threat Log Console</label>
+                                        <div class="threat-box" id="guardrail-logs">
+                                            <span class="placeholder-text">No security threats or PII leaks detected.</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 

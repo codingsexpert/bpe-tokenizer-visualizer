@@ -633,6 +633,157 @@ function runTokenization() {
     renderTree(tokens);
     renderBenchmarkComparison(text);
     attachSynchronizedHighlightListeners(tokens);
+    runGuardrailsScan(text, tokens);
+}
+
+function runGuardrailsScan(text, tokens) {
+    const textLower = (text || '').toLowerCase();
+    const tokenCount = tokens ? tokens.length : 0;
+    const threats = [];
+
+    let score = 100;
+    let tokensPass = true;
+    let injectionPass = true;
+    let piiPass = true;
+    let specialPass = true;
+    let spamPass = true;
+
+    // 1. Token Limit & Context Window Guardrail
+    const gcTokensMsg = el('gc-tokens-msg');
+    if (tokenCount > 4096) {
+        tokensPass = false;
+        score -= 30;
+        threats.push(`⚠️ CRITICAL OVERFLOW: Token count (${tokenCount}) exceeds 4,096 limit!`);
+        if (gcTokensMsg) gcTokensMsg.innerText = `Danger: ${tokenCount} tokens exceeds 4,096 limit!`;
+    } else if (tokenCount > 2048) {
+        score -= 10;
+        threats.push(`⚠️ WARNING: Token count (${tokenCount}) exceeds 2,048 soft limit.`);
+        if (gcTokensMsg) gcTokensMsg.innerText = `Warning: ${tokenCount} tokens exceeds 2,048 limit.`;
+    } else {
+        if (gcTokensMsg) gcTokensMsg.innerText = `Safe: ${tokenCount} tokens within 4,096 limit.`;
+    }
+
+    // 2. Prompt Injection & Jailbreak Scanner
+    const injectionPatterns = [
+        /ignore previous/i, /system prompt/i, /dan mode/i, /jailbreak/i, /bypass/i,
+        /override/i, /unconstrained/i, /act as/i, /forget rules/i, /developer mode/i
+    ];
+    const gcInjectionMsg = el('gc-injection-msg');
+    const detectedInjections = injectionPatterns.filter(p => p.test(textLower));
+    if (detectedInjections.length > 0) {
+        injectionPass = false;
+        score -= 35;
+        threats.push(`🚨 JAILBREAK ATTACK DETECTED: Prompt injection phrase matching adversarial rules!`);
+        if (gcInjectionMsg) gcInjectionMsg.innerText = `Alert: Jailbreak / Prompt Injection pattern detected!`;
+    } else {
+        if (gcInjectionMsg) gcInjectionMsg.innerText = `Pass: No adversarial injection phrases found.`;
+    }
+
+    // 3. PII & Secret Leak Scanner
+    const piiPatterns = [
+        { name: "OpenAI / GCP API Key", regex: /(sk-[a-zA-Z0-9]{20,}|AIza[0-9A-Za-z-_]{35})/g },
+        { name: "Email Address", regex: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g },
+        { name: "IP Address", regex: /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/g }
+    ];
+    const gcPiiMsg = el('gc-pii-msg');
+    let piiFound = false;
+    piiPatterns.forEach(p => {
+        if (p.regex.test(text)) {
+            piiFound = true;
+            threats.push(`🔒 SECRET LEAK: Detected ${p.name} in prompt input!`);
+        }
+    });
+    if (piiFound) {
+        piiPass = false;
+        score -= 25;
+        if (gcPiiMsg) gcPiiMsg.innerText = `Alert: PII / Secret API Key detected in input!`;
+    } else {
+        if (gcPiiMsg) gcPiiMsg.innerText = `Pass: No API keys or sensitive PII found.`;
+    }
+
+    // 4. Special Token Chat Template Injection
+    const specialPatterns = [/<\|im_start\|>/i, /<\|im_end\|>/i, /<\|endoftext\|>/i, /\[INST\]/i, /\[\/INST\]/i, /<s>/i, /<\/s>/i];
+    const gcSpecialMsg = el('gc-special-msg');
+    const detectedSpecial = specialPatterns.filter(p => p.test(text));
+    if (detectedSpecial.length > 0) {
+        specialPass = false;
+        score -= 20;
+        threats.push(`🚫 CHAT TAG INJECTION: Detected raw chat template tags (<|im_start|>)!`);
+        if (gcSpecialMsg) gcSpecialMsg.innerText = `Alert: Special chat template injection detected!`;
+    } else {
+        if (gcSpecialMsg) gcSpecialMsg.innerText = `Pass: Clean prompt structure.`;
+    }
+
+    // 5. Glitch Token & Spam Flooding Scanner
+    const gcSpamMsg = el('gc-spam-msg');
+    if (/(.)\1{19,}/.test(text)) {
+        spamPass = false;
+        score -= 15;
+        threats.push(`💥 GLITCH TOKEN SPAM: 20+ repeated identical characters detected.`);
+        if (gcSpamMsg) gcSpamMsg.innerText = `Alert: Repeated character flooding detected!`;
+    } else {
+        if (gcSpamMsg) gcSpamMsg.innerText = `Pass: Normal character sequence.`;
+    }
+
+    score = Math.max(0, score);
+
+    // Update Score Meter
+    const grScore = el('gr-score');
+    const grScoreBar = el('gr-score-bar');
+    if (grScore) grScore.innerText = `${score}%`;
+    if (grScoreBar) {
+        grScoreBar.style.width = `${score}%`;
+        if (score >= 80) grScoreBar.className = "progress-fill green";
+        else if (score >= 50) grScoreBar.className = "progress-fill yellow";
+        else grScoreBar.className = "progress-fill red";
+    }
+
+    // Update Check Icon Indicators
+    updateCheckIcon('gc-tokens', tokensPass);
+    updateCheckIcon('gc-injection', injectionPass);
+    updateCheckIcon('gc-pii', piiPass);
+    updateCheckIcon('gc-special', specialPass);
+    updateCheckIcon('gc-spam', spamPass);
+
+    // Update Live Status Pill in Stats Strip
+    const statusPill = el('guardrail-status-pill');
+    if (statusPill) {
+        if (!injectionPass || !specialPass) {
+            statusPill.className = "guardrail-pill danger";
+            statusPill.innerText = "🚨 ALERT (Attack Detected)";
+        } else if (!piiPass || !tokensPass) {
+            statusPill.className = "guardrail-pill warning";
+            statusPill.innerText = "⚠️ WARNING (PII/Limit)";
+        } else {
+            statusPill.className = "guardrail-pill safe";
+            statusPill.innerText = "🛡️ SAFE (Pass)";
+        }
+    }
+
+    // Update Logs Console
+    const grLogs = el('guardrail-logs');
+    if (grLogs) {
+        if (threats.length === 0) {
+            grLogs.innerHTML = `<span class="placeholder-text">No security threats or PII leaks detected. Prompt is 100% safe.</span>`;
+        } else {
+            grLogs.innerHTML = threats.map(t => `<div class="threat-log-item">${escapeHtml(t)}</div>`).join('');
+        }
+    }
+}
+
+function updateCheckIcon(id, isPass) {
+    const parent = el(id);
+    if (!parent) return;
+    const icon = parent.querySelector('.check-icon');
+    if (icon) {
+        if (isPass) {
+            icon.className = "check-icon pass";
+            icon.innerText = "✓";
+        } else {
+            icon.className = "check-icon fail";
+            icon.innerText = "✕";
+        }
+    }
 }
 
 function attachSynchronizedHighlightListeners(tokens) {
