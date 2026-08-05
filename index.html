@@ -26,7 +26,7 @@
                     </div>
                     <div class="brand-meta">
                         <span class="brand-name">TokenViz</span>
-                        <span class="brand-tag">Studio</span>
+                        <span class="brand-tag">Studio Pro</span>
                     </div>
                 </div>
 
@@ -53,6 +53,12 @@
 
                 <!-- Right Actions -->
                 <div class="nav-right">
+                    <!-- Dark / Light Mode Toggle Button -->
+                    <button id="btn-theme-toggle" class="nav-btn" title="Toggle Theme">
+                        <svg id="theme-icon-dark" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                        <svg id="theme-icon-light" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="hidden"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                        <span id="theme-text" class="btn-text">Dark</span>
+                    </button>
                     <button id="btn-export-json" class="nav-btn" title="Export Model JSON">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                         <span class="btn-text">Export</span>
@@ -71,9 +77,22 @@
             <!-- Hero Prompt & Subword Visualizer Container -->
             <section class="hero-section">
                 <div class="hero-container">
-                    <!-- Prompt Editor Card -->
+                    <!-- Preset Quick Prompts Toolbar -->
+                    <div class="preset-prompts-bar">
+                        <span class="preset-label">Quick Presets:</span>
+                        <button class="preset-btn" data-preset="code">🐍 Python Code</button>
+                        <button class="preset-btn" data-preset="hindi">🌐 Hindi & Emoji</button>
+                        <button class="preset-btn" data-preset="json">📊 JSON Payload</button>
+                        <button class="preset-btn" data-preset="math">🧮 Math Formula</button>
+                        <button class="preset-btn" data-preset="chat">💬 AI Prompt</button>
+                    </div>
+
+                    <!-- Prompt Editor Card with Dual-Highlight Mirror -->
                     <div class="chatgpt-input-card">
-                        <textarea id="prompt-input" rows="3" placeholder="Type or paste any text to inspect subword tokenization in real time..."></textarea>
+                        <div class="textarea-wrapper">
+                            <div id="prompt-mirror" class="prompt-mirror"></div>
+                            <textarea id="prompt-input" rows="3" placeholder="Type or paste any text to inspect subword tokenization in real time..."></textarea>
+                        </div>
                     </div>
 
                     <!-- Ultra-Premium Subword Token Stream Studio Card -->
@@ -111,11 +130,15 @@
                         </div>
                     </div>
 
-                    <!-- Sequence Array Output Box -->
+                    <!-- Multi-Format Copy Sequence Box -->
                     <div class="sequence-container">
                         <div class="sequence-bar">
-                            <span>Token ID Sequence Array</span>
-                            <button id="btn-copy-ids" class="btn-sm">Copy Array</button>
+                            <span>Token Output Copy Utilities</span>
+                            <div class="export-actions">
+                                <button id="btn-copy-ids" class="btn-sm">IDs [ Array ]</button>
+                                <button id="btn-copy-strings" class="btn-sm">Strings [ ]</button>
+                                <button id="btn-copy-hf" class="btn-sm">HuggingFace [ ]</button>
+                            </div>
                         </div>
                         <div class="sequence-box" id="sequence-display">[ ]</div>
                     </div>
@@ -126,6 +149,7 @@
                     <nav class="tabs-nav">
                         <button class="tab-btn active" data-tab="tab-tokens">Token Table</button>
                         <button class="tab-btn" data-tab="tab-diff">Model Benchmark</button>
+                        <button class="tab-btn" data-tab="tab-utf8">UTF-8 Bytes</button>
                         <button class="tab-btn" data-tab="tab-tree">Merge Tree</button>
                         <button class="tab-btn" data-tab="tab-analytics">Cost & Analytics</button>
                         <button class="tab-btn" data-tab="tab-trainer">BPE Trainer</button>
@@ -160,7 +184,26 @@
                         </div>
                     </div>
 
-                    <!-- Tab 3: Visual BPE Merge Hierarchy Tree -->
+                    <!-- Tab 3: UTF-8 Multi-Byte Inspector -->
+                    <div id="tab-utf8" class="tab-content">
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Char / Token</th>
+                                        <th>Unicode Point</th>
+                                        <th>Byte Count</th>
+                                        <th>Hex Bytes</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="utf8-table-body">
+                                    <tr><td colspan="4" class="empty-cell">No multi-byte tokens inspectable</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Tab 4: Visual BPE Merge Hierarchy Tree -->
                     <div id="tab-tree" class="tab-content">
                         <div class="tree-box">
                             <span class="box-title">Subword Merge Hierarchy Tree</span>
@@ -170,7 +213,7 @@
                         </div>
                     </div>
 
-                    <!-- Tab 4: Cost & Analytics -->
+                    <!-- Tab 5: Cost & Analytics -->
                     <div id="tab-analytics" class="tab-content">
                         <div class="analytics-grid">
                             <div class="card-metric">
@@ -218,7 +261,7 @@
                         </div>
                     </div>
 
-                    <!-- Tab 5: Custom BPE Trainer -->
+                    <!-- Tab 6: Custom BPE Trainer -->
                     <div id="tab-trainer" class="tab-content">
                         <div class="trainer-form">
                             <div class="form-field">
@@ -250,7 +293,7 @@
                         </div>
                     </div>
 
-                    <!-- Tab 6: Vocab Explorer -->
+                    <!-- Tab 7: Vocab Explorer -->
                     <div id="tab-vocab" class="tab-content">
                         <div class="search-bar">
                             <input type="text" id="vocab-search" placeholder="Filter by Token ID or String..." class="search-input">
