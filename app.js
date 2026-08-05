@@ -17,6 +17,13 @@ function getTokenColor(idx) {
     return TOKEN_COLOR_PALETTE[idx % TOKEN_COLOR_PALETTE.length];
 }
 
+// Global Sanitizer to strip any unicode space symbols (␣, Ġ,   or \u2581) from ALL views
+function sanitizeTokenStr(str) {
+    if (!str) return '';
+    const cleaned = str.replace(/[\u2581\u0120\u2423␣_]/g, '').trim();
+    return cleaned || str.trim() || str;
+}
+
 // Official Regex Patterns matching OpenAI tiktoken & Anthropic Claude
 const REGEX_PATTERNS = {
     gpt4o: /[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]*[\p{Ll}\p{Lm}\p{Lo}\p{M}]+(?i:'s|'t|'re|'ve|'m|'ll|'d)?|[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]+[\p{Ll}\p{Lm}\p{Lo}\p{M}]*(?i:'s|'t|'re|'ve|'m|'ll|'d)?|\p{N}{1,3}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+/gu,
@@ -130,7 +137,7 @@ class JSBPETokenizer {
             this.mergeRanks[p1 + '|' + p2] = iter;
             nextId++;
 
-            mergeLogs.push({ iter: iter + 1, p1: p1, p2: p2, merged: merged, count: bestCount });
+            mergeLogs.push({ iter: iter + 1, p1: sanitizeTokenStr(p1), p2: sanitizeTokenStr(p2), merged: sanitizeTokenStr(merged), count: bestCount });
 
             const newWordFreq = new Map();
             for (const [key, freq] of wordFreq.entries()) {
@@ -214,9 +221,7 @@ class JSBPETokenizer {
                 assignedId = Math.abs(h) % 150000 + 256;
             }
 
-            // Strip any leading/trailing space symbols (including ␣, Ġ,   or \u2581) so token chips show ONLY pure text names
-            const cleanStr = p.replace(/^[\s\u2581\u0120\u2423␣_]+|[\s\u2581\u0120\u2423␣_]+$/g, '').trim() || p;
-
+            const cleanStr = sanitizeTokenStr(p);
             const charLen = p.length;
             const res = {
                 id: assignedId,
@@ -299,6 +304,7 @@ function getOrCreateCustomTooltip() {
 
 function showCustomTooltip(e, t, idx) {
     const tooltip = getOrCreateCustomTooltip();
+    const cleanDisplay = sanitizeTokenStr(t.displayStr);
     tooltip.innerHTML = `
         <div class="tooltip-header">
             <span class="tooltip-badge">Token #${idx + 1}</span>
@@ -307,7 +313,7 @@ function showCustomTooltip(e, t, idx) {
         <div class="tooltip-body">
             <div class="tooltip-row">
                 <span class="t-label">Subword Text:</span>
-                <span class="t-val code">'${escapeHtml(t.displayStr)}'</span>
+                <span class="t-val code">'${escapeHtml(cleanDisplay)}'</span>
             </div>
             <div class="tooltip-row">
                 <span class="t-label">Char Position:</span>
@@ -473,27 +479,27 @@ function runTokenization() {
         if (heatmapBox) heatmapBox.innerHTML = `<span class="placeholder-text">Type text above to view compression heatmap...</span>`;
         if (sequenceDisplay) sequenceDisplay.innerText = `[ ]`;
     } else {
-        // Render Clean Token Chips (ONLY Subword Text, NO Number ID Badge & NO ␣ symbol)
+        // Render Clean Token Chips (ONLY Pure Subword Text Name)
         if (inlineTokenView) {
             inlineTokenView.innerHTML = tokens.map((t, idx) => {
                 const palette = getTokenColor(idx);
-                const str = t.displayStr;
+                const str = sanitizeTokenStr(t.displayStr);
                 return `
                     <span class="token-inline-span" data-token-idx="${idx}" style="background-color: ${palette.bg}; border-color: ${palette.border}; color: ${palette.text}">
-                        <span style="white-space: pre;">${escapeHtml(str)}</span>
+                        <span>${escapeHtml(str)}</span>
                     </span>
                 `;
             }).join('');
         }
 
-        // Render Inspector Subword Cards (ONLY Text, NO Number ID Badge)
+        // Render Inspector Subword Cards (ONLY Pure Subword Text Name)
         if (tokensBox) {
             tokensBox.innerHTML = tokens.map((t, idx) => {
                 const palette = getTokenColor(idx);
-                const str = t.displayStr;
+                const str = sanitizeTokenStr(t.displayStr);
                 return `
                     <div class="subword-badge" data-token-idx="${idx}" style="background-color: ${palette.bg}; border-color: ${palette.border}; color: ${palette.text}">
-                        <span style="white-space: pre;">${escapeHtml(str)}</span>
+                        <span>${escapeHtml(str)}</span>
                     </div>
                 `;
             }).join('');
@@ -505,10 +511,10 @@ function runTokenization() {
                 const isMerged = t.len > 1;
                 const bg = isMerged ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.12)';
                 const border = isMerged ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.25)';
-                const str = t.displayStr;
+                const str = sanitizeTokenStr(t.displayStr);
                 return `
                     <span class="heatmap-pill" style="background: ${bg}; border-color: ${border}">
-                        <span style="white-space: pre;">${escapeHtml(str)}</span>
+                        <span>${escapeHtml(str)}</span>
                     </span>
                 `;
             }).join('');
@@ -630,12 +636,12 @@ function renderTokensTable(tokens) {
     }
 
     tokensTableBody.innerHTML = tokens.map((t, idx) => {
-        const str = t.displayStr;
+        const str = sanitizeTokenStr(t.displayStr);
         return `
             <tr data-token-idx="${idx}">
                 <td>${idx + 1}</td>
                 <td><strong>${t.id}</strong></td>
-                <td><code style="font-family: var(--font-code); color: var(--accent-indigo); white-space: pre;">'${escapeHtml(str)}'</code></td>
+                <td><code style="font-family: var(--font-code); color: var(--accent-indigo);">'${escapeHtml(str)}'</code></td>
                 <td><code style="font-family: var(--font-code); color: var(--text-muted)">${t.hex}</code></td>
                 <td><code style="font-family: var(--font-code); font-size: 0.75rem;">${t.startIdx}..${t.endIdx}</code></td>
             </tr>
@@ -652,11 +658,13 @@ function renderTree(tokens) {
     }
 
     treeContainer.innerHTML = tokenizer.merges.slice(0, 15).map(([p1, p2], idx) => {
-        const mergedStr = p1 + p2;
+        const p1Clean = sanitizeTokenStr(p1);
+        const p2Clean = sanitizeTokenStr(p2);
+        const mergedStr = sanitizeTokenStr(p1 + p2);
         return `
             <div class="tree-node">
-                <span>Rank #${idx + 1}: ('<span style="white-space: pre;">${escapeHtml(p1)}</span>' + '<span style="white-space: pre;">${escapeHtml(p2)}</span>')</span>
-                <strong style="color: var(--accent-indigo)">➔ '<span style="white-space: pre;">${escapeHtml(mergedStr)}</span>'</strong>
+                <span>Rank #${idx + 1}: ('${escapeHtml(p1Clean)}' + '${escapeHtml(p2Clean)}')</span>
+                <strong style="color: var(--accent-indigo)">➔ '${escapeHtml(mergedStr)}'</strong>
             </div>
         `;
     }).join('');
@@ -706,8 +714,8 @@ function renderMerges(mergeLogs) {
 
     mergesList.innerHTML = mergeLogs.map(log => `
         <div class="merge-item">
-            <span>'<span style="white-space: pre;">${escapeHtml(log.p1)}</span>' + '<span style="white-space: pre;">${escapeHtml(log.p2)}</span>'</span>
-            <span>➔ '<span style="white-space: pre;">${escapeHtml(log.merged)}</span>'</span>
+            <span>'${escapeHtml(log.p1)}' + '${escapeHtml(log.p2)}'</span>
+            <span>➔ '${escapeHtml(log.merged)}'</span>
         </div>
     `).join('');
 }
@@ -720,11 +728,12 @@ function renderVocabTable() {
     const rows = [];
 
     for (const [tokenStr, id] of Object.entries(tokenizer.vocab)) {
-        if (!q || id.toString().includes(q) || tokenStr.toLowerCase().includes(q)) {
+        const cleanStr = sanitizeTokenStr(tokenStr);
+        if (!q || id.toString().includes(q) || cleanStr.toLowerCase().includes(q)) {
             rows.push(`
                 <tr>
                     <td><strong>${id}</strong></td>
-                    <td><code style="white-space: pre;">'${escapeHtml(tokenStr)}'</code></td>
+                    <td><code>'${escapeHtml(cleanStr)}'</code></td>
                     <td><span class="vstat">${id < 256 ? 'Byte' : 'BPE Subword'}</span></td>
                 </tr>
             `);
