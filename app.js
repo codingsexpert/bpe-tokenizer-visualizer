@@ -17,28 +17,16 @@ function getTokenColor(idx) {
     return TOKEN_COLOR_PALETTE[idx % TOKEN_COLOR_PALETTE.length];
 }
 
-// Aggressive Sanitizer: Strips ALL space markers (␣, Ġ,  , \u2581) AND appended token ID numbers (a97 -> a, b276 -> b)
+// Aggressive Sanitizer: Strips space symbols (␣, Ġ,  , \u2581) and leading/trailing whitespace
 function sanitizeTokenStr(str) {
     if (!str) return '';
-    // 1. Remove all space markers: spaces, ␣, Ġ, \u2581, \u0120, \u2423, _
-    let cleaned = str.replace(/[\s\u2581\u0120\u2423␣_]+/g, '').trim();
-    
-    // 2. Strip any appended token IDs from letter subwords (e.g. "a97" -> "a", "b276" -> "b", "c423" -> "c")
-    if (/^[a-zA-Z]+\d+$/.test(cleaned)) {
-        cleaned = cleaned.replace(/\d+$/, '');
-    }
-    
-    // 3. If cleaned is a standalone number like "32" or "276" that came from a space token, return empty string
-    if (/^\d+$/.test(cleaned) && (str.includes(' ') || str.includes('␣') || str.includes('\u2581') || str.includes('\u0120') || str.includes('\u2423'))) {
-        return '';
-    }
-
+    const cleaned = str.replace(/[\s\u2581\u0120\u2423␣_]+/g, '').trim();
     return cleaned;
 }
 
 // Official Regex Patterns matching OpenAI tiktoken & Anthropic Claude
 const REGEX_PATTERNS = {
-    gpt4o: /[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]*[\p{Ll}\p{Lm}\p{Lo}\p{M}]+(?i:'s|'t|'re|'ve|'m|'ll|'d)?|[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}] shelter+[\p{Ll}\p{Lm}\p{Lo}\p{M}]*(?i:'s|'t|'re|'ve|'m|'ll|'d)?|\p{N}{1,3}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+/gu,
+    gpt4o: /[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]*[\p{Ll}\p{Lm}\p{Lo}\p{M}]+(?i:'s|'t|'re|'ve|'m|'ll|'d)?|[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]+[\p{Ll}\p{Lm}\p{Lo}\p{M}]*(?i:'s|'t|'re|'ve|'m|'ll|'d)?|\p{N}{1,3}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+/gu,
     gpt4: /(?:'[sS]|'[tT]|'[rR][eE]|'[vV][eE]|'[mM]|'[lL][lL]|'[dD])| ?\p{L}+|\p{N}{1,3}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+/gu,
     deepseek: /[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]*[\p{Ll}\p{Lm}\p{Lo}\p{M}]+(?i:'s|'t|'re|'ve|'m|'ll|'d)?|[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]+[\p{Ll}\p{Lm}\p{Lo}\p{M}]*(?i:'s|'t|'re|'ve|'m|'ll|'d)?|\p{N}{1,3}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+/gu,
     claude: /[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]*[\p{Ll}\p{Lm}\p{Lo}\p{M}]+(?i:'s|'t|'re|'ve|'m|'ll|'d)?|[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]+[\p{Ll}\p{Lm}\p{Lo}\p{M}]*(?i:'s|'t|'re|'ve|'m|'ll|'d)?|\p{N}{1,3}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+/gu,
@@ -56,7 +44,6 @@ The quick brown fox jumps over the lazy dog.
 Hello world! Welcome to the BPE Tokenizer Studio.
 a b c d e f g h i j k l m n o p q r s t u v w x y z.
 A B C D E F G H I J K L M N O P Q R S T U V W X Y Z.
-0 1 2 3 4 5 6 7 8 9 10 100 1000.
 def main():
     print("Hello, World!")
     return True
@@ -64,7 +51,6 @@ import os, sys, json, math, re, time
 this is a test sentence with common words like the of and to in a is that for it as was with on at by from or an be which have or directly.
 subword tokenization algorithms Byte-Pair Encoding BPE WordPiece Unigram Tiktoken.
 GPT-4o DeepSeek Claude Llama Mistral BERT OpenAI Anthropic.
-नमस्ते दुनिया! आप कैसे हैं? भारत एक महान देश है।
 DeepSeek V3 R1 reasoning model performance benchmarks.
 prompt input output model tokenizer visualizer visual tokens count ratio cost context.
 `;
@@ -199,22 +185,6 @@ class JSBPETokenizer {
 
             parts[bestIdx] = parts[bestIdx] + parts[bestIdx + 1];
             parts.splice(bestIdx + 1, 1);
-        }
-
-        // Subword Fallback: Group unmerged character fragments into clean subwords
-        if (parts.length > 2) {
-            const mergedSubwords = [];
-            let curr = '';
-            for (let p of parts) {
-                if (curr.length === 0 || (curr + p).length <= 4) {
-                    curr += p;
-                } else {
-                    mergedSubwords.push(curr);
-                    curr = p;
-                }
-            }
-            if (curr.length > 0) mergedSubwords.push(curr);
-            parts = mergedSubwords;
         }
 
         let currCharPos = startCharIdx;
@@ -495,28 +465,26 @@ function runTokenization() {
         if (inlineTokenView) {
             inlineTokenView.innerHTML = tokens.map((t, idx) => {
                 const palette = getTokenColor(idx);
-                const str = sanitizeTokenStr(t.displayStr);
-                if (!str) return '';
+                const str = sanitizeTokenStr(t.displayStr) || '&nbsp;';
                 return `
                     <span class="token-inline-span" data-token-idx="${idx}" style="background-color: ${palette.bg}; border-color: ${palette.border}; color: ${palette.text}">
-                        <span>${escapeHtml(str)}</span>
+                        <span>${str}</span>
                     </span>
                 `;
-            }).filter(Boolean).join('');
+            }).join('');
         }
 
         // Render Inspector Subword Cards (ONLY Pure Subword Text Name)
         if (tokensBox) {
             tokensBox.innerHTML = tokens.map((t, idx) => {
                 const palette = getTokenColor(idx);
-                const str = sanitizeTokenStr(t.displayStr);
-                if (!str) return '';
+                const str = sanitizeTokenStr(t.displayStr) || '&nbsp;';
                 return `
                     <div class="subword-badge" data-token-idx="${idx}" style="background-color: ${palette.bg}; border-color: ${palette.border}; color: ${palette.text}">
-                        <span>${escapeHtml(str)}</span>
+                        <span>${str}</span>
                     </div>
                 `;
-            }).filter(Boolean).join('');
+            }).join('');
         }
 
         // Heatmap
@@ -525,14 +493,13 @@ function runTokenization() {
                 const isMerged = t.len > 1;
                 const bg = isMerged ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.12)';
                 const border = isMerged ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.25)';
-                const str = sanitizeTokenStr(t.displayStr);
-                if (!str) return '';
+                const str = sanitizeTokenStr(t.displayStr) || '&nbsp;';
                 return `
                     <span class="heatmap-pill" style="background: ${bg}; border-color: ${border}">
-                        <span>${escapeHtml(str)}</span>
+                        <span>${str}</span>
                     </span>
                 `;
-            }).filter(Boolean).join('');
+            }).join('');
         }
 
         if (sequenceDisplay) sequenceDisplay.innerText = `[ ${tokens.map(t => t.id).join(', ')} ]`;
