@@ -309,16 +309,15 @@ html, body {
     max-height: 250px;
 }
 
-/* Premium Token Pill Badge */
+/* Premium Clean Token Pill Badge (ONLY Subword Text Name) */
 .token-inline-span {
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
-    padding: 0.28rem 0.65rem;
+    padding: 0.32rem 0.75rem;
     border-radius: 8px;
     font-family: var(--font-code);
     font-weight: 600;
-    font-size: 0.92rem;
+    font-size: 0.95rem;
     border: 1px solid rgba(0, 0, 0, 0.1);
     cursor: pointer;
     user-select: none;
@@ -332,15 +331,6 @@ html, body {
     box-shadow: 0 8px 20px rgba(124, 58, 237, 0.25);
     outline: 2px solid var(--accent-indigo);
     z-index: 10;
-}
-
-.token-inline-id {
-    font-size: 0.72rem;
-    background: rgba(15, 23, 42, 0.1);
-    padding: 1px 6px;
-    border-radius: 4px;
-    font-weight: 600;
-    font-family: var(--font-code);
 }
 
 .visualizer-container, .heatmap-container, .sequence-container {
@@ -411,8 +401,7 @@ html, body {
 .subword-badge {
     display: inline-flex;
     align-items: center;
-    gap: 0.35rem;
-    padding: 0.3rem 0.6rem;
+    padding: 0.3rem 0.65rem;
     border-radius: var(--radius-sm);
     font-family: var(--font-code);
     font-size: 0.85rem;
@@ -430,14 +419,6 @@ html, body {
     box-shadow: 0 6px 18px rgba(124, 58, 237, 0.25);
     outline: 2px solid var(--accent-indigo);
     z-index: 5;
-}
-
-.subword-id {
-    font-size: 0.72rem;
-    background: rgba(15, 23, 42, 0.08);
-    padding: 1px 5px;
-    border-radius: 4px;
-    font-family: var(--font-code);
 }
 
 .heatmap-pill {
@@ -473,6 +454,93 @@ html, body {
     font-weight: 600;
     cursor: pointer;
     white-space: nowrap;
+}
+
+/* Custom Ultra-Modern Floating Glass Tooltip */
+.custom-glass-tooltip {
+    position: fixed;
+    z-index: 9999;
+    background: rgba(15, 23, 42, 0.94);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(124, 58, 237, 0.4);
+    border-radius: 12px;
+    padding: 0.75rem 0.9rem;
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.35), 0 4px 12px rgba(79, 70, 229, 0.2);
+    color: #f8fafc;
+    font-family: var(--font-ui);
+    pointer-events: none;
+    opacity: 0;
+    transform: scale(0.96) translateY(4px);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+    min-width: 210px;
+}
+
+.custom-glass-tooltip.visible {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+}
+
+.tooltip-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 0.45rem;
+    margin-bottom: 0.45rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.tooltip-badge {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #a855f7;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.tooltip-id {
+    font-family: var(--font-code);
+    font-size: 0.75rem;
+    font-weight: 700;
+    background: rgba(99, 102, 241, 0.25);
+    color: #818cf8;
+    padding: 1px 7px;
+    border-radius: 6px;
+    border: 1px solid rgba(99, 102, 241, 0.4);
+}
+
+.tooltip-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.tooltip-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.78rem;
+    gap: 0.5rem;
+}
+
+.t-label {
+    color: #94a3b8;
+    font-size: 0.72rem;
+}
+
+.t-val {
+    color: #f1f5f9;
+    font-weight: 600;
+}
+
+.t-val.code {
+    font-family: var(--font-code);
+    color: #38bdf8;
+}
+
+.t-val.code.muted {
+    color: #cbd5e1;
+    font-size: 0.72rem;
 }
 
 /* Bottom Inspector Grid */

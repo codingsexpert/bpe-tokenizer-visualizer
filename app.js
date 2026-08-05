@@ -19,7 +19,7 @@ function getTokenColor(idx) {
 
 // Official Regex Patterns matching OpenAI tiktoken & Anthropic Claude
 const REGEX_PATTERNS = {
-    gpt4o: /[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]*[\p{Ll}\p{Lm}\p{Lo}\p{M}]+(?i:'s|'t|'re|'ve|'m|'ll|'d)?|[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}] shelter+[\p{Ll}\p{Lm}\p{Lo}\p{M}]*(?i:'s|'t|'re|'ve|'m|'ll|'d)?|\p{N}{1,3}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+/gu,
+    gpt4o: /[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]*[\p{Ll}\p{Lm}\p{Lo}\p{M}]+(?i:'s|'t|'re|'ve|'m|'ll|'d)?|[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]+[\p{Ll}\p{Lm}\p{Lo}\p{M}]*(?i:'s|'t|'re|'ve|'m|'ll|'d)?|\p{N}{1,3}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+/gu,
     gpt4: /(?:'[sS]|'[tT]|'[rR][eE]|'[vV][eE]|'[mM]|'[lL][lL]|'[dD])| ?\p{L}+|\p{N}{1,3}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+/gu,
     deepseek: /[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]*[\p{Ll}\p{Lm}\p{Lo}\p{M}]+(?i:'s|'t|'re|'ve|'m|'ll|'d)?|[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]+[\p{Ll}\p{Lm}\p{Lo}\p{M}]*(?i:'s|'t|'re|'ve|'m|'ll|'d)?|\p{N}{1,3}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+/gu,
     claude: /[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]*[\p{Ll}\p{Lm}\p{Lo}\p{M}]+(?i:'s|'t|'re|'ve|'m|'ll|'d)?|[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]+[\p{Ll}\p{Lm}\p{Lo}\p{M}]*(?i:'s|'t|'re|'ve|'m|'ll|'d)?|\p{N}{1,3}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+/gu,
@@ -214,8 +214,8 @@ class JSBPETokenizer {
                 assignedId = Math.abs(h) % 150000 + 256;
             }
 
-            // Clean string representation: Strip any unicode space markers ␣ or Ġ
-            const cleanStr = p.replace(/[␣Ġ_]/g, ' ');
+            // Absolutely NO ␣ or Ġ or _ replacement symbols
+            const cleanStr = p;
 
             const charLen = p.length;
             const res = {
@@ -284,6 +284,71 @@ class JSBPETokenizer {
 
 // Controller Instance
 const tokenizer = new JSBPETokenizer();
+
+// Custom Floating Glass Tooltip Controller
+let customTooltipEl = null;
+
+function getOrCreateCustomTooltip() {
+    if (!customTooltipEl) {
+        customTooltipEl = document.createElement('div');
+        customTooltipEl.className = 'custom-glass-tooltip';
+        document.body.appendChild(customTooltipEl);
+    }
+    return customTooltipEl;
+}
+
+function showCustomTooltip(e, t, idx) {
+    const tooltip = getOrCreateCustomTooltip();
+    tooltip.innerHTML = `
+        <div class="tooltip-header">
+            <span class="tooltip-badge">Token #${idx + 1}</span>
+            <span class="tooltip-id">ID ${t.id}</span>
+        </div>
+        <div class="tooltip-body">
+            <div class="tooltip-row">
+                <span class="t-label">Subword Text:</span>
+                <span class="t-val code">'${escapeHtml(t.displayStr)}'</span>
+            </div>
+            <div class="tooltip-row">
+                <span class="t-label">Char Position:</span>
+                <span class="t-val">${t.startIdx} .. ${t.endIdx} (${t.len} chars)</span>
+            </div>
+            <div class="tooltip-row">
+                <span class="t-label">UTF-8 Hex Bytes:</span>
+                <span class="t-val code muted">${t.hex}</span>
+            </div>
+        </div>
+    `;
+    tooltip.classList.add('visible');
+    positionCustomTooltip(e);
+}
+
+function positionCustomTooltip(e) {
+    if (!customTooltipEl) return;
+    const x = e.clientX;
+    const y = e.clientY;
+    const tooltipWidth = customTooltipEl.offsetWidth || 230;
+    const tooltipHeight = customTooltipEl.offsetHeight || 110;
+
+    let left = x + 12;
+    let top = y + 15;
+
+    if (left + tooltipWidth > window.innerWidth - 10) {
+        left = x - tooltipWidth - 10;
+    }
+    if (top + tooltipHeight > window.innerHeight - 10) {
+        top = y - tooltipHeight - 10;
+    }
+
+    customTooltipEl.style.left = `${Math.max(10, left)}px`;
+    customTooltipEl.style.top = `${Math.max(10, top)}px`;
+}
+
+function hideCustomTooltip() {
+    if (customTooltipEl) {
+        customTooltipEl.classList.remove('visible');
+    }
+}
 
 // Safe DOM Access Helper
 function el(id) {
@@ -408,26 +473,26 @@ function runTokenization() {
         if (heatmapBox) heatmapBox.innerHTML = `<span class="placeholder-text">Type text above to view compression heatmap...</span>`;
         if (sequenceDisplay) sequenceDisplay.innerText = `[ ]`;
     } else {
-        // Render Clean Token Chips containing ONLY the Subword Text (No Number ID & No ␣ symbol)
+        // Render Clean Token Chips (ONLY Subword Text, NO Number ID Badge & NO ␣ symbol)
         if (inlineTokenView) {
             inlineTokenView.innerHTML = tokens.map((t, idx) => {
                 const palette = getTokenColor(idx);
                 const str = t.displayStr;
                 return `
-                    <span class="token-inline-span" data-token-idx="${idx}" style="background-color: ${palette.bg}; border-color: ${palette.border}; color: ${palette.text}" title="Token #${idx + 1}&#10;Token ID: ${t.id}&#10;Subword: '${str}'&#10;Char Pos: ${t.startIdx}..${t.endIdx}&#10;Hex: ${t.hex}">
+                    <span class="token-inline-span" data-token-idx="${idx}" style="background-color: ${palette.bg}; border-color: ${palette.border}; color: ${palette.text}">
                         <span style="white-space: pre;">${escapeHtml(str)}</span>
                     </span>
                 `;
             }).join('');
         }
 
-        // Render Inspector Subword Cards (ONLY Text, No Number ID)
+        // Render Inspector Subword Cards (ONLY Text, NO Number ID Badge)
         if (tokensBox) {
             tokensBox.innerHTML = tokens.map((t, idx) => {
                 const palette = getTokenColor(idx);
                 const str = t.displayStr;
                 return `
-                    <div class="subword-badge" data-token-idx="${idx}" style="background-color: ${palette.bg}; border-color: ${palette.border}; color: ${palette.text}" title="Token ID: ${t.id} | Chars: ${t.startIdx}..${t.endIdx} | Bytes: ${t.hex}">
+                    <div class="subword-badge" data-token-idx="${idx}" style="background-color: ${palette.bg}; border-color: ${palette.border}; color: ${palette.text}">
                         <span style="white-space: pre;">${escapeHtml(str)}</span>
                     </div>
                 `;
@@ -496,10 +561,10 @@ function runTokenization() {
     renderTokensTable(tokens);
     renderTree(tokens);
     renderBenchmarkComparison(text);
-    attachSynchronizedHighlightListeners();
+    attachSynchronizedHighlightListeners(tokens);
 }
 
-function attachSynchronizedHighlightListeners() {
+function attachSynchronizedHighlightListeners(tokens) {
     const allInlineSpans = document.querySelectorAll('.token-inline-span');
     const allBadges = document.querySelectorAll('.subword-badge');
     const allTableRows = document.querySelectorAll('#tokens-table-body tr');
@@ -523,20 +588,35 @@ function attachSynchronizedHighlightListeners() {
         allInlineSpans.forEach(el => el.classList.remove('token-highlighted'));
         allBadges.forEach(el => el.classList.remove('token-highlighted'));
         allTableRows.forEach(el => el.classList.remove('token-highlighted'));
+        hideCustomTooltip();
     }
 
-    allInlineSpans.forEach(span => {
-        span.addEventListener('mouseenter', () => highlightIdx(span.dataset.tokenIdx));
+    allInlineSpans.forEach((span, i) => {
+        span.addEventListener('mouseenter', (e) => {
+            const idx = span.dataset.tokenIdx;
+            highlightIdx(idx);
+            if (tokens && tokens[idx]) showCustomTooltip(e, tokens[idx], parseInt(idx));
+        });
+        span.addEventListener('mousemove', (e) => positionCustomTooltip(e));
         span.addEventListener('mouseleave', clearHighlight);
     });
 
-    allBadges.forEach(badge => {
-        badge.addEventListener('mouseenter', () => highlightIdx(badge.dataset.tokenIdx));
+    allBadges.forEach((badge, i) => {
+        badge.addEventListener('mouseenter', (e) => {
+            const idx = badge.dataset.tokenIdx;
+            highlightIdx(idx);
+            if (tokens && tokens[idx]) showCustomTooltip(e, tokens[idx], parseInt(idx));
+        });
+        badge.addEventListener('mousemove', (e) => positionCustomTooltip(e));
         badge.addEventListener('mouseleave', clearHighlight);
     });
 
     allTableRows.forEach((row, idx) => {
-        row.addEventListener('mouseenter', () => highlightIdx(idx.toString()));
+        row.addEventListener('mouseenter', (e) => {
+            highlightIdx(idx.toString());
+            if (tokens && tokens[idx]) showCustomTooltip(e, tokens[idx], idx);
+        });
+        row.addEventListener('mousemove', (e) => positionCustomTooltip(e));
         row.addEventListener('mouseleave', clearHighlight);
     });
 }
