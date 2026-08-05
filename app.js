@@ -24,18 +24,9 @@ function sanitizeTokenStr(str) {
     return cleaned || str;
 }
 
-// Preset Prompts Collection
-const PRESET_PROMPTS = {
-    code: `def calculate_bpe_tokens(prompt: str) -> list[int]:\n    """Encodes prompt using BPE algorithm"""\n    tokens = tokenizer.encode(prompt)\n    return tokens`,
-    hindi: `नमस्ते दुनिया! DeepSeek R1 & GPT-4o LLM BPE Tokenizer Visualizer Studio`,
-    json: `{\n  "model": "gpt-4o",\n  "prompt": "BPE Tokenization",\n  "tokens": 42,\n  "temperature": 0.7,\n  "stream": true\n}`,
-    math: `E = mc^2 \n\\int_0^\\infty e^{-x^2} dx = \\frac{\\sqrt{\\pi}}{2}`,
-    chat: `<|im_start|>system\nYou are an AI coding assistant.<|im_end|>\n<|im_start|>user\nExplain BPE tokenization.<|im_end|>`
-};
-
 // Official Regex Patterns matching OpenAI tiktoken & Anthropic Claude
 const REGEX_PATTERNS = {
-    gpt4o: /[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]*[\p{Ll}\p{Lm}\p{Lo}\p{M}]+(?i:'s|'t|'re|'ve|'m|'ll|'d)?|[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]+[\p{Ll}\p{Lm}\p{Lo}\p{M}]*(?i:'s|'t|'re|'ve|'m|'ll|'d)?|\p{N}{1,3}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+/gu,
+    gpt4o: /[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]*[\p{Ll}\p{Lm}\p{Lo}\p{M}]+(?i:'s|'t|'re|'ve|'m|'ll|'d)?|[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}] shelter+[\p{Ll}\p{Lm}\p{Lo}\p{M}]*(?i:'s|'t|'re|'ve|'m|'ll|'d)?|\p{N}{1,3}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+/gu,
     gpt4: /(?:'[sS]|'[tT]|'[rR][eE]|'[vV][eE]|'[mM]|'[lL][lL]|'[dD])| ?\p{L}+|\p{N}{1,3}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+/gu,
     deepseek: /[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]*[\p{Ll}\p{Lm}\p{Lo}\p{M}]+(?i:'s|'t|'re|'ve|'m|'ll|'d)?|[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]+[\p{Ll}\p{Lm}\p{Lo}\p{M}]*(?i:'s|'t|'re|'ve|'m|'ll|'d)?|\p{N}{1,3}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+/gu,
     claude: /[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]*[\p{Ll}\p{Lm}\p{Lo}\p{M}]+(?i:'s|'t|'re|'ve|'m|'ll|'d)?|[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]+[\p{Ll}\p{Lm}\p{Lo}\p{M}]*(?i:'s|'t|'re|'ve|'m|'ll|'d)?|\p{N}{1,3}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+/gu,
@@ -46,7 +37,7 @@ const REGEX_PATTERNS = {
     custom: /'s|'t|'re|'ve|'m|'ll|'d| ?\w+| ?[^\s\w]+|\s+(?!\S)|\s+/gu
 };
 
-// Rich Pre-training Corpus
+// Rich Pre-training Corpus with standard English words, subwords, numbers, code, and punctuation
 const COMPREHENSIVE_BPE_CORPUS = `
 Tokenizers Token izers process text into subword units for LLMs.
 The quick brown fox jumps over the lazy dog.
@@ -370,39 +361,7 @@ function el(id) {
     return document.getElementById(id);
 }
 
-let cachedCurrentTokens = [];
-
 document.addEventListener('DOMContentLoaded', () => {
-    // Theme Switcher Initialization
-    const btnThemeToggle = el('btn-theme-toggle');
-    const themeIconDark = el('theme-icon-dark');
-    const themeIconLight = el('theme-icon-light');
-    const themeText = el('theme-text');
-
-    if (btnThemeToggle) {
-        btnThemeToggle.addEventListener('click', () => {
-            document.body.classList.toggle('dark-mode');
-            const isDark = document.body.classList.contains('dark-mode');
-            if (themeIconDark) themeIconDark.classList.toggle('hidden', isDark);
-            if (themeIconLight) themeIconLight.classList.toggle('hidden', !isDark);
-            if (themeText) themeText.innerText = isDark ? 'Light' : 'Dark';
-        });
-    }
-
-    // Preset Prompts Handler
-    document.querySelectorAll('.preset-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const btnEl = e.target.closest('.preset-btn');
-            if (!btnEl) return;
-            const key = btnEl.dataset.preset;
-            const promptInput = el('prompt-input');
-            if (promptInput && PRESET_PROMPTS[key]) {
-                promptInput.value = PRESET_PROMPTS[key];
-                runTokenization();
-            }
-        });
-    });
-
     // Tabs Navigation
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
@@ -454,28 +413,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const vocabSearch = el('vocab-search');
     if (vocabSearch) vocabSearch.addEventListener('input', renderVocabTable);
 
-    // Multi-Format Copy Handlers
     const btnCopyIds = el('btn-copy-ids');
     if (btnCopyIds) {
         btnCopyIds.addEventListener('click', () => {
-            const arr = cachedCurrentTokens.map(t => t.id);
-            copyToClipboard(`[ ${arr.join(', ')} ]`, btnCopyIds, 'IDs Copied!');
-        });
-    }
-
-    const btnCopyStrings = el('btn-copy-strings');
-    if (btnCopyStrings) {
-        btnCopyStrings.addEventListener('click', () => {
-            const arr = cachedCurrentTokens.map(t => `"${sanitizeTokenStr(t.displayStr)}"`);
-            copyToClipboard(`[ ${arr.join(', ')} ]`, btnCopyStrings, 'Strings Copied!');
-        });
-    }
-
-    const btnCopyHf = el('btn-copy-hf');
-    if (btnCopyHf) {
-        btnCopyHf.addEventListener('click', () => {
-            const arr = cachedCurrentTokens.map((t, idx) => idx === 0 ? `"${sanitizeTokenStr(t.displayStr)}"` : `"##${sanitizeTokenStr(t.displayStr)}"` );
-            copyToClipboard(`[ ${arr.join(', ')} ]`, btnCopyHf, 'HF Copied!');
+            const sequenceDisplay = el('sequence-display');
+            if (sequenceDisplay) {
+                navigator.clipboard.writeText(sequenceDisplay.innerText);
+                btnCopyIds.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Copied`;
+                setTimeout(() => {
+                    btnCopyIds.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy Array`;
+                }, 1500);
+            }
         });
     }
 
@@ -487,15 +435,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     runTraining();
 });
-
-function copyToClipboard(text, btnEl, successMsg) {
-    navigator.clipboard.writeText(text);
-    const origText = btnEl.innerText;
-    btnEl.innerText = successMsg;
-    setTimeout(() => {
-        btnEl.innerText = origText;
-    }, 1500);
-}
 
 function runTraining() {
     const corpusText = el('corpus-text');
@@ -528,7 +467,6 @@ function runTokenization() {
     const maxMergeStep = stepSlider ? parseInt(stepSlider.value) : Infinity;
 
     const tokens = tokenizer.encode(text, null, maxMergeStep);
-    cachedCurrentTokens = tokens;
 
     const inlineTokenView = el('inline-token-view');
     const tokensBox = el('tokens-box');
@@ -541,7 +479,7 @@ function runTokenization() {
         if (heatmapBox) heatmapBox.innerHTML = `<span class="placeholder-text">Type text above to view compression heatmap...</span>`;
         if (sequenceDisplay) sequenceDisplay.innerText = `[ ]`;
     } else {
-        // Render Clean Token Chips (ONLY Pure Subword Text Name)
+        // Render Clean Token Chips (ONLY Pure Subword Text Name, NO Space Symbols)
         if (inlineTokenView) {
             inlineTokenView.innerHTML = tokens.map((t, idx) => {
                 const palette = getTokenColor(idx);
@@ -627,29 +565,9 @@ function runTokenization() {
     if (bBpe) bBpe.innerText = `${bpeTokens} tokens`;
 
     renderTokensTable(tokens);
-    renderUTF8Table(tokens);
     renderTree(tokens);
     renderBenchmarkComparison(text);
     attachSynchronizedHighlightListeners(tokens);
-}
-
-function updatePromptMirror(tokens, targetIdx = -1) {
-    const mirror = el('prompt-mirror');
-    const promptInput = el('prompt-input');
-    if (!mirror || !promptInput) return;
-
-    const fullText = promptInput.value;
-    if (targetIdx === -1 || !tokens[targetIdx]) {
-        mirror.innerHTML = escapeHtml(fullText);
-        return;
-    }
-
-    const t = tokens[targetIdx];
-    const before = fullText.slice(0, t.startIdx);
-    const target = fullText.slice(t.startIdx, t.endIdx);
-    const after = fullText.slice(t.endIdx);
-
-    mirror.innerHTML = `${escapeHtml(before)}<mark class="highlight-text">${escapeHtml(target)}</mark>${escapeHtml(after)}`;
 }
 
 function attachSynchronizedHighlightListeners(tokens) {
@@ -670,14 +588,12 @@ function attachSynchronizedHighlightListeners(tokens) {
             if (rIdx.toString() === idx) el.classList.add('token-highlighted');
             else el.classList.remove('token-highlighted');
         });
-        updatePromptMirror(tokens, parseInt(idx));
     }
 
     function clearHighlight() {
         allInlineSpans.forEach(el => el.classList.remove('token-highlighted'));
         allBadges.forEach(el => el.classList.remove('token-highlighted'));
         allTableRows.forEach(el => el.classList.remove('token-highlighted'));
-        updatePromptMirror(tokens, -1);
         hideCustomTooltip();
     }
 
@@ -731,38 +647,6 @@ function renderTokensTable(tokens) {
             </tr>
         `;
     }).join('');
-}
-
-function renderUTF8Table(tokens) {
-    const utf8TableBody = el('utf8-table-body');
-    if (!utf8TableBody) return;
-    if (tokens.length === 0) {
-        utf8TableBody.innerHTML = `<tr><td colspan="4" class="empty-cell">No multi-byte tokens inspectable</td></tr>`;
-        return;
-    }
-
-    const encoder = new TextEncoder();
-    const rows = [];
-
-    tokens.forEach(t => {
-        const chars = Array.from(t.tokenStr);
-        chars.forEach(ch => {
-            const bytes = Array.from(encoder.encode(ch));
-            const hex = bytes.map(b => b.toString(16).padStart(2, '0').toUpperCase()).join(' ');
-            const codePoint = 'U+' + ch.codePointAt(0).toString(16).padStart(4, '0').toUpperCase();
-            
-            rows.push(`
-                <tr>
-                    <td><strong style="font-size: 1rem; color: var(--accent-purple);">${escapeHtml(ch)}</strong></td>
-                    <td><code style="font-family: var(--font-code); color: var(--accent-cyan);">${codePoint}</code></td>
-                    <td><strong>${bytes.length}</strong> byte(s)</td>
-                    <td><code style="font-family: var(--font-code); color: var(--text-muted);">${hex}</code></td>
-                </tr>
-            `);
-        });
-    });
-
-    utf8TableBody.innerHTML = rows.join('');
 }
 
 function renderTree(tokens) {
