@@ -10,7 +10,7 @@ Inspired by OpenAI's `tiktoken`, Anthropic, DeepSeek, and Hugging Face Tokenizer
 
 ---
 
-## 🌟 Key Features
+## Key Features
 
 * **8-Model Comparative Benchmark Suite:** Side-by-side tokenization comparison across **GPT-4o (`o200k_base`)**, **DeepSeek V3 / R1**, **Claude 3.5 Sonnet**, **GPT-4 (`cl100k_base`)**, **Llama 3 (`128k`)**, **CodeLlama**, **GPT-2 (`r50k_base`)**, and **BERT (`WordPiece`)**.
 * **Byte-Level UTF-8 Encoding:** 100% lossless UTF-8 byte handling. Zero Out-Of-Vocabulary (UNK) errors across Hindi, Multilingual text, Emojis, Math symbols, and Code.
@@ -23,7 +23,7 @@ Inspired by OpenAI's `tiktoken`, Anthropic, DeepSeek, and Hugging Face Tokenizer
 
 ---
 
-## 📁 Repository Structure
+## Repository Structure
 
 ```
 ├── tokenizer.py            # Standalone Production Python BPE Tokenizer
@@ -36,7 +36,7 @@ Inspired by OpenAI's `tiktoken`, Anthropic, DeepSeek, and Hugging Face Tokenizer
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### 1. Run Web UI Locally
 You can run the interactive visualizer web app directly with Python's built-in HTTP server:
@@ -53,7 +53,7 @@ Open **[http://localhost:8000](http://localhost:8000)** in your browser.
 
 ---
 
-### 2. Use Python BPE Tokenizer ([`tokenizer.py`](tokenizer.py))
+## 2. Use Python BPE Tokenizer ([`tokenizer.py`](tokenizer.py))
 
 ```python
 from tokenizer import BPETokenizer

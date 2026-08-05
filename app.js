@@ -653,11 +653,11 @@ function runGuardrailsScan(text, tokens) {
     if (tokenCount > 4096) {
         tokensPass = false;
         score -= 30;
-        threats.push(`⚠️ CRITICAL OVERFLOW: Token count (${tokenCount}) exceeds 4,096 limit!`);
+        threats.push(`CRITICAL OVERFLOW: Token count (${tokenCount}) exceeds 4,096 limit!`);
         if (gcTokensMsg) gcTokensMsg.innerText = `Danger: ${tokenCount} tokens exceeds 4,096 limit!`;
     } else if (tokenCount > 2048) {
         score -= 10;
-        threats.push(`⚠️ WARNING: Token count (${tokenCount}) exceeds 2,048 soft limit.`);
+        threats.push(`WARNING: Token count (${tokenCount}) exceeds 2,048 soft limit.`);
         if (gcTokensMsg) gcTokensMsg.innerText = `Warning: ${tokenCount} tokens exceeds 2,048 limit.`;
     } else {
         if (gcTokensMsg) gcTokensMsg.innerText = `Safe: ${tokenCount} tokens within 4,096 limit.`;
@@ -673,7 +673,7 @@ function runGuardrailsScan(text, tokens) {
     if (detectedInjections.length > 0) {
         injectionPass = false;
         score -= 35;
-        threats.push(`🚨 JAILBREAK ATTACK DETECTED: Prompt injection phrase matching adversarial rules!`);
+        threats.push(`JAILBREAK ATTACK DETECTED: Prompt injection phrase matching adversarial rules!`);
         if (gcInjectionMsg) gcInjectionMsg.innerText = `Alert: Jailbreak / Prompt Injection pattern detected!`;
     } else {
         if (gcInjectionMsg) gcInjectionMsg.innerText = `Pass: No adversarial injection phrases found.`;
@@ -690,7 +690,7 @@ function runGuardrailsScan(text, tokens) {
     piiPatterns.forEach(p => {
         if (p.regex.test(text)) {
             piiFound = true;
-            threats.push(`🔒 SECRET LEAK: Detected ${p.name} in prompt input!`);
+            threats.push(`SECRET LEAK: Detected ${p.name} in prompt input!`);
         }
     });
     if (piiFound) {
@@ -708,7 +708,7 @@ function runGuardrailsScan(text, tokens) {
     if (detectedSpecial.length > 0) {
         specialPass = false;
         score -= 20;
-        threats.push(`🚫 CHAT TAG INJECTION: Detected raw chat template tags (<|im_start|>)!`);
+        threats.push(`CHAT TAG INJECTION: Detected raw chat template tags (<|im_start|>)!`);
         if (gcSpecialMsg) gcSpecialMsg.innerText = `Alert: Special chat template injection detected!`;
     } else {
         if (gcSpecialMsg) gcSpecialMsg.innerText = `Pass: Clean prompt structure.`;
@@ -719,7 +719,7 @@ function runGuardrailsScan(text, tokens) {
     if (/(.)\1{19,}/.test(text)) {
         spamPass = false;
         score -= 15;
-        threats.push(`💥 GLITCH TOKEN SPAM: 20+ repeated identical characters detected.`);
+        threats.push(`GLITCH TOKEN SPAM: 20+ repeated identical characters detected.`);
         if (gcSpamMsg) gcSpamMsg.innerText = `Alert: Repeated character flooding detected!`;
     } else {
         if (gcSpamMsg) gcSpamMsg.innerText = `Pass: Normal character sequence.`;
@@ -750,13 +750,13 @@ function runGuardrailsScan(text, tokens) {
     if (statusPill) {
         if (!injectionPass || !specialPass) {
             statusPill.className = "guardrail-pill danger";
-            statusPill.innerText = "🚨 ALERT (Attack Detected)";
+            statusPill.innerText = "ALERT (Attack Detected)";
         } else if (!piiPass || !tokensPass) {
             statusPill.className = "guardrail-pill warning";
-            statusPill.innerText = "⚠️ WARNING (PII/Limit)";
+            statusPill.innerText = "WARNING (PII/Limit)";
         } else {
             statusPill.className = "guardrail-pill safe";
-            statusPill.innerText = "🛡️ SAFE (Pass)";
+            statusPill.innerText = "SAFE (Pass)";
         }
     }
 
