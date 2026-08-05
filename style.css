@@ -1111,3 +1111,110 @@ html, body {
     padding: 2px 0;
     border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
 }
+
+/* Quick Presets Bar */
+.presets-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    padding-bottom: 0.35rem;
+}
+
+.presets-label {
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin-right: 0.2rem;
+}
+
+.preset-btn {
+    background: rgba(241, 245, 249, 0.9);
+    border: 1px solid rgba(203, 213, 225, 0.8);
+    color: var(--text-secondary);
+    border-radius: 14px;
+    padding: 0.28rem 0.7rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.preset-btn:hover, .preset-btn.active {
+    background: var(--gradient-primary);
+    color: #ffffff;
+    border-color: transparent;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);
+}
+
+/* Light Theme Variable Overrides */
+body.light-theme {
+    --bg-main: #f1f5f9;
+    --text-primary: #0f172a;
+    --text-secondary: #334155;
+    --text-muted: #64748b;
+    --bg-card: #ffffff;
+}
+
+body.light-theme .navbar {
+    background: rgba(255, 255, 255, 0.85);
+    border-bottom-color: rgba(203, 213, 225, 0.8);
+}
+
+body.light-theme .canvas-panel, body.light-theme .organic-panel {
+    background: #ffffff;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+}
+
+/* Token Search Bar */
+.token-search-bar {
+    margin-bottom: 0.85rem;
+}
+
+/* Composition Distribution Bar */
+.composition-bar {
+    display: flex;
+    height: 10px;
+    border-radius: 6px;
+    overflow: hidden;
+    background: rgba(241, 245, 249, 0.8);
+    margin-top: 0.5rem;
+    margin-bottom: 0.6rem;
+}
+
+.comp-segment {
+    height: 100%;
+    transition: width 0.3s ease;
+}
+
+.comp-segment.word-seg {
+    background: #6366f1;
+}
+
+.comp-segment.subword-seg {
+    background: #a855f7;
+}
+
+.comp-segment.byte-seg {
+    background: #ec4899;
+}
+
+.comp-legend {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+.comp-legend .dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 3px;
+}
+
+.comp-legend .word-dot { background: #6366f1; }
+.comp-legend .sub-dot { background: #a855f7; }
+.comp-legend .byte-dot { background: #ec4899; }

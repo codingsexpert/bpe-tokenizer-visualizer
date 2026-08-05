@@ -51,6 +51,10 @@
 
                 <!-- Right Actions -->
                 <div class="nav-right">
+                    <button id="theme-toggle" class="nav-btn theme-btn" title="Toggle Light/Dark Theme">
+                        <svg class="sun-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                        <span>Theme</span>
+                    </button>
                     <button id="btn-export-json" class="nav-btn" title="Export Model JSON">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                         <span>Export</span>
@@ -75,6 +79,17 @@
 
                 <!-- Seamless Canvas Workspace -->
                 <div class="canvas-panel">
+                    <!-- Preset Prompts Bar -->
+                    <div class="presets-bar">
+                        <span class="presets-label">Quick Presets:</span>
+                        <button class="preset-btn active" data-preset="standard">Standard Prompt</button>
+                        <button class="preset-btn" data-preset="python">Python Code</button>
+                        <button class="preset-btn" data-preset="hindi">Hindi Prompt</button>
+                        <button class="preset-btn" data-preset="jailbreak">Jailbreak Test</button>
+                        <button class="preset-btn" data-preset="apikey">API Key Leak Test</button>
+                        <button class="preset-btn" data-preset="json">JSON Payload</button>
+                    </div>
+
                     <!-- Text Area Canvas -->
                     <div class="input-canvas">
                         <textarea id="prompt-input" rows="3" placeholder="Type or paste any text to visualize subwords and run guardrails scan..."></textarea>
@@ -157,6 +172,9 @@
                         <div class="tab-content-container">
                             <!-- Tab 1: Token Details Table -->
                             <div id="tab-tokens" class="tab-content active">
+                                <div class="search-bar token-search-bar">
+                                    <input type="text" id="token-table-search" placeholder="Search generated tokens by text, ID, or byte range..." class="search-input">
+                                </div>
                                 <div class="table-container">
                                     <table class="data-table">
                                         <thead>
@@ -279,6 +297,23 @@
                                     </div>
                                     <div class="progress-track">
                                         <div class="progress-fill" id="ctx-fill" style="width: 0%;"></div>
+                                    </div>
+                                </div>
+
+                                <div class="meter-block">
+                                    <div class="block-row">
+                                        <span>Token Subword Composition</span>
+                                        <span id="composition-val">0% Subwords</span>
+                                    </div>
+                                    <div class="composition-bar">
+                                        <div class="comp-segment word-seg" id="seg-word" style="width: 60%;" title="Whole Words"></div>
+                                        <div class="comp-segment subword-seg" id="seg-sub" style="width: 30%;" title="Subwords"></div>
+                                        <div class="comp-segment byte-seg" id="seg-byte" style="width: 10%;" title="Single Bytes"></div>
+                                    </div>
+                                    <div class="comp-legend">
+                                        <span><i class="dot word-dot"></i> Whole Words</span>
+                                        <span><i class="dot sub-dot"></i> Subwords</span>
+                                        <span><i class="dot byte-dot"></i> Bytes</span>
                                     </div>
                                 </div>
 
