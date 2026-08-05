@@ -77,22 +77,34 @@
             <!-- Hero Prompt & Subword Visualizer Container -->
             <section class="hero-section">
                 <div class="hero-container">
-                    <!-- Preset Quick Prompts Toolbar -->
+                    <!-- Preset Quick Prompts Toolbar (Clean SVG Icons Only) -->
                     <div class="preset-prompts-bar">
-                        <span class="preset-label">Quick Presets:</span>
-                        <button class="preset-btn" data-preset="code">🐍 Python Code</button>
-                        <button class="preset-btn" data-preset="hindi">🌐 Hindi & Emoji</button>
-                        <button class="preset-btn" data-preset="json">📊 JSON Payload</button>
-                        <button class="preset-btn" data-preset="math">🧮 Math Formula</button>
-                        <button class="preset-btn" data-preset="chat">💬 AI Prompt</button>
+                        <span class="preset-label">Presets:</span>
+                        <button class="preset-btn" data-preset="code">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                            <span>Python Code</span>
+                        </button>
+                        <button class="preset-btn" data-preset="hindi">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                            <span>Multilingual</span>
+                        </button>
+                        <button class="preset-btn" data-preset="json">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                            <span>JSON Data</span>
+                        </button>
+                        <button class="preset-btn" data-preset="math">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
+                            <span>Math Formula</span>
+                        </button>
+                        <button class="preset-btn" data-preset="chat">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                            <span>AI Prompt</span>
+                        </button>
                     </div>
 
-                    <!-- Prompt Editor Card with Dual-Highlight Mirror -->
+                    <!-- Prompt Editor Card -->
                     <div class="chatgpt-input-card">
-                        <div class="textarea-wrapper">
-                            <div id="prompt-mirror" class="prompt-mirror"></div>
-                            <textarea id="prompt-input" rows="3" placeholder="Type or paste any text to inspect subword tokenization in real time..."></textarea>
-                        </div>
+                        <textarea id="prompt-input" rows="3" placeholder="Type or paste any text to inspect subword tokenization in real time..."></textarea>
                     </div>
 
                     <!-- Ultra-Premium Subword Token Stream Studio Card -->

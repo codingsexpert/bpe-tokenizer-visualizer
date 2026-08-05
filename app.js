@@ -27,7 +27,7 @@ function sanitizeTokenStr(str) {
 // Preset Prompts Collection
 const PRESET_PROMPTS = {
     code: `def calculate_bpe_tokens(prompt: str) -> list[int]:\n    """Encodes prompt using BPE algorithm"""\n    tokens = tokenizer.encode(prompt)\n    return tokens`,
-    hindi: `नमस्ते दुनिया! 🚀 DeepSeek R1 & GPT-4o LLM BPE Tokenizer Visualizer ✨`,
+    hindi: `नमस्ते दुनिया! DeepSeek R1 & GPT-4o LLM BPE Tokenizer Visualizer Studio`,
     json: `{\n  "model": "gpt-4o",\n  "prompt": "BPE Tokenization",\n  "tokens": 42,\n  "temperature": 0.7,\n  "stream": true\n}`,
     math: `E = mc^2 \n\\int_0^\\infty e^{-x^2} dx = \\frac{\\sqrt{\\pi}}{2}`,
     chat: `<|im_start|>system\nYou are an AI coding assistant.<|im_end|>\n<|im_start|>user\nExplain BPE tokenization.<|im_end|>`
@@ -392,7 +392,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Preset Prompts Handler
     document.querySelectorAll('.preset-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            const key = e.target.dataset.preset;
+            const btnEl = e.target.closest('.preset-btn');
+            if (!btnEl) return;
+            const key = btnEl.dataset.preset;
             const promptInput = el('prompt-input');
             if (promptInput && PRESET_PROMPTS[key]) {
                 promptInput.value = PRESET_PROMPTS[key];
