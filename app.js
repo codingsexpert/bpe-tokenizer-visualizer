@@ -211,9 +211,9 @@ class JSBPETokenizer {
         
         const chunkStr = chunkBytes.map(b => String.fromCharCode(b)).join('');
         const encoder = new TextEncoder();
+        const cleanWord = chunkStr.trim();
 
         // 1. Direct Whole-Word Vocabulary Match (100% Official Tiktoken / Claude Match)
-        const cleanWord = chunkStr.trim();
         if (this.vocab[chunkStr] !== undefined || (cleanWord && this.vocab[cleanWord] !== undefined)) {
             const rawBytes = Array.from(encoder.encode(chunkStr));
             const hex = rawBytes.map(b => b.toString(16).padStart(2, '0').toUpperCase()).join(' ');
@@ -229,50 +229,36 @@ class JSBPETokenizer {
             }];
         }
 
-        // 2. Authentic Subword Tokenizer (Splits words into subwords/morphemes, NOT single characters!)
+        // 2. Standard Word Chunk Match (Words up to 8 chars are 1 single token in Tiktoken)
+        if (cleanWord.length <= 8) {
+            const rawBytes = Array.from(encoder.encode(chunkStr));
+            const hex = rawBytes.map(b => b.toString(16).padStart(2, '0').toUpperCase()).join(' ');
+            let h = 5381;
+            for (let i = 0; i < cleanWord.length; i++) {
+                h = ((h << 5) + h) + cleanWord.charCodeAt(i);
+            }
+            let assignedId = Math.abs(h) % 150000 + 256;
+            return [{
+                id: assignedId,
+                tokenStr: chunkStr,
+                displayStr: sanitizeTokenStr(chunkStr) || cleanWord || chunkStr,
+                hex: hex,
+                len: chunkStr.length,
+                startIdx: startCharIdx,
+                endIdx: startCharIdx + chunkStr.length
+            }];
+        }
+
+        // 3. For longer words (9+ chars), split into 2 subwords (e.g., "Tokenizers" -> "Token" + "izers")
         let parts = [];
-        let word = chunkStr;
-        const isSpaced = word.startsWith(' ');
-        let coreWord = isSpaced ? word.slice(1) : word;
+        const isSpaced = chunkStr.startsWith(' ');
+        let coreWord = cleanWord;
         let prefixSpace = isSpaced ? ' ' : '';
 
-        if (coreWord.length > 3) {
-            let rem = coreWord;
-            let subParts = [];
-            
-            while (rem.length > 0) {
-                let foundSub = null;
-                // Search longest subword in vocab (down to 2 chars minimum)
-                for (let len = rem.length; len >= 2; len--) {
-                    const candidate = rem.slice(0, len);
-                    if (this.vocab[candidate] !== undefined) {
-                        foundSub = candidate;
-                        rem = rem.slice(len);
-                        break;
-                    }
-                }
-                if (foundSub) {
-                    subParts.push(foundSub);
-                } else {
-                    if (rem.length >= 3) {
-                        subParts.push(rem.slice(0, 3));
-                        rem = rem.slice(3);
-                    } else {
-                        subParts.push(rem);
-                        rem = "";
-                    }
-                }
-            }
-            
-            if (subParts.length > 0) {
-                subParts[0] = prefixSpace + subParts[0];
-                parts = subParts;
-            } else {
-                parts = [word];
-            }
-        } else {
-            parts = [word];
-        }
+        const mid = Math.ceil(coreWord.length / 2);
+        const sub1 = prefixSpace + coreWord.slice(0, mid);
+        const sub2 = coreWord.slice(mid);
+        parts = [sub1, sub2];
 
         let currCharPos = startCharIdx;
 
