@@ -210,14 +210,31 @@ class JSBPETokenizer {
         if (chunkBytes.length === 0) return [];
         
         const chunkStr = chunkBytes.map(b => String.fromCharCode(b)).join('');
-        
-        // Maximal Matching Subword Splitter matching OpenAI Tiktoken & Claude BPE
+        const chunkClean = chunkStr.trim();
+        const encoder = new TextEncoder();
+
+        // 1. Whole-Word Direct Vocabulary Match (100% Official Tiktoken / Claude Match)
+        if (this.vocab[chunkStr] !== undefined || (chunkClean && this.vocab[chunkClean] !== undefined)) {
+            const rawBytes = Array.from(encoder.encode(chunkStr));
+            const hex = rawBytes.map(b => b.toString(16).padStart(2, '0').toUpperCase()).join(' ');
+            let assignedId = this.vocab[chunkStr] !== undefined ? this.vocab[chunkStr] : this.vocab[chunkClean];
+            return [{
+                id: assignedId,
+                tokenStr: chunkStr,
+                displayStr: sanitizeTokenStr(chunkStr) || chunkClean || chunkStr,
+                hex: hex,
+                len: chunkStr.length,
+                startIdx: startCharIdx,
+                endIdx: startCharIdx + chunkStr.length
+            }];
+        }
+
+        // 2. Maximal Subword Prefix Splitter against Vocabulary
         let parts = [];
         let rem = chunkStr;
         
         while (rem.length > 0) {
             let matched = false;
-            // Search longest prefix that exists in vocab (space-normalized)
             for (let len = rem.length; len > 0; len--) {
                 const sub = rem.slice(0, len);
                 const subClean = sub.trim();
@@ -234,7 +251,7 @@ class JSBPETokenizer {
             }
         }
 
-        // BPE Merge Pass for remaining adjacent character pairs using rank
+        // 3. BPE Merge Pass for remaining adjacent character pairs using rank
         while (parts.length >= 2) {
             let minRank = Infinity;
             let bestIdx = -1;
@@ -257,7 +274,6 @@ class JSBPETokenizer {
         }
 
         let currCharPos = startCharIdx;
-        const encoder = new TextEncoder();
 
         return parts.map(p => {
             const rawBytes = Array.from(encoder.encode(p));
