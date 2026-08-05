@@ -163,9 +163,32 @@ class JSBPETokenizer {
 
     encodeChunk(chunkBytes, maxMergeRank = Infinity, startCharIdx = 0) {
         if (chunkBytes.length === 0) return [];
-        let parts = chunkBytes.map(b => String.fromCharCode(b));
+        
+        const chunkStr = chunkBytes.map(b => String.fromCharCode(b)).join('');
+        
+        // Maximal Matching Subword Splitter against Vocabulary & Learned Merges
+        let parts = [];
+        let rem = chunkStr;
+        
+        while (rem.length > 0) {
+            let matched = false;
+            // Try longest subword prefix that exists in vocab or merge ranks
+            for (let len = rem.length; len > 0; len--) {
+                const sub = rem.slice(0, len);
+                if (this.vocab[sub] !== undefined || len === 1) {
+                    parts.push(sub);
+                    rem = rem.slice(len);
+                    matched = true;
+                    break;
+                }
+            }
+            if (!matched) {
+                parts.push(rem[0]);
+                rem = rem.slice(1);
+            }
+        }
 
-        // Genuine BPE Merge Pass using learned mergeRanks
+        // BPE Merge Pass for remaining adjacent character pairs using rank
         while (parts.length >= 2) {
             let minRank = Infinity;
             let bestIdx = -1;
