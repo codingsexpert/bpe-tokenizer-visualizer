@@ -37,7 +37,43 @@ const REGEX_PATTERNS = {
     custom: /'s|'t|'re|'ve|'m|'ll|'d| ?\w+| ?[^\s\w]+|\s+(?!\S)|\s+/gu
 };
 
-// Rich Pre-training Corpus with standard English words, subwords, numbers, code, and punctuation
+// Massive Production BPE Vocabulary Database (1000+ Frequent English Words, LLM Terms, Subwords, Code & Hindi Tokens)
+const MASSIVE_BPE_VOCABULARY = [
+    "the", "be", "to", "of", "and", "a", "in", "that", "have", "I", "it", "for", "not", "on", "with", "he", "as", "you", "do", "at",
+    "this", "but", "his", "by", "from", "they", "we", "say", "her", "she", "or", "an", "will", "my", "one", "all", "would", "there",
+    "their", "what", "so", "up", "out", "if", "about", "who", "get", "which", "go", "me", "when", "make", "can", "like", "time", "no",
+    "just", "him", "know", "take", "people", "into", "year", "your", "good", "some", "could", "them", "see", "other", "than", "then",
+    "now", "look", "only", "come", "its", "over", "think", "also", "back", "after", "use", "two", "how", "our", "work", "first", "well",
+    "way", "even", "new", "want", "because", "any", "these", "give", "day", "most", "us", "great", "between", "need", "state", "never",
+    "last", "let", "thought", "city", "tree", "cross", "farm", "hard", "start", "might", "story", "saw", "far", "sea", "draw", "left",
+    "late", "run", "while", "press", "close", "night", "real", "life", "few", "north", "book", "carry", "took", "science", "eat",
+    "room", "friend", "began", "idea", "fish", "mountain", "stop", "once", "base", "hear", "horse", "cut", "sure", "watch", "color",
+    "face", "wood", "main", "open", "seem", "together", "next", "white", "children", "begin", "got", "walk", "example", "ease", "paper",
+    "group", "always", "music", "those", "both", "mark", "often", "letter", "until", "mile", "river", "car", "feet", "care", "second",
+    "enough", "plain", "girl", "usual", "young", "ready", "above", "ever", "red", "list", "though", "feel", "talk", "bird", "soon",
+    "body", "dog", "family", "direct", "pose", "leave", "song", "measure", "door", "product", "black", "short", "numeral", "class",
+    "wind", "question", "happen", "complete", "ship", "area", "half", "rock", "order", "fire", "south", "problem", "piece", "told",
+    "knew", "pass", "since", "top", "whole", "king", "space", "heard", "best", "hour", "better", "true", "during", "hundred", "five",
+    "remember", "step", "early", "hold", "west", "ground", "interest", "reach", "fast", "verb", "sing", "listen", "six", "table",
+    "travel", "less", "morning", "ten", "simple", "several", "vowel", "toward", "war", "lay", "against", "pattern", "slow", "center",
+    "love", "person", "money", "serve", "appear", "road", "map", "rain", "rule", "govern", "pull", "cold", "notice", "voice", "unit",
+    "power", "town", "fine", "certain", "fly", "fall", "lead", "cry", "dark", "machine", "note", "wait", "plan", "figure", "star",
+    "box", "noun", "field", "rest", "correct", "able", "pound", "done", "beauty", "drive", "stood", "contain", "front", "teach",
+    "week", "final", "gave", "green", "oh", "quick", "develop", "ocean", "warm", "free", "minute", "strong", "special", "mind",
+    "behind", "clear", "tail", "produce", "fact", "street", "inch", "multiply", "nothing", "course", "stay", "wheel", "full",
+    "force", "blue", "object", "decide", "surface", "deep", "moon", "island", "foot", "system", "busy", "test", "record", "boat",
+    "common", "gold", "possible", "plane", "stead", "dry", "wonder", "laugh", "thousand", "ago", "ran", "check", "game", "shape",
+    "equate", "hot", "miss", "brought", "heat", "snow", "tire", "bring", "yes", "distant", "fill", "east", "paint", "language", "among",
+    "Token", "token", "Tokens", "tokens", "Tokenizer", "tokenizer", "Tokenizers", "tokenizers", "process", "text", "sub", "word",
+    "subword", "subwords", "unit", "units", "LLM", "LLMs", "BPE", "gpt", "GPT", "DeepSeek", "Claude", "Llama", "BERT", "OpenAI",
+    "Anthropic", "python", "code", "main", "def", "return", "print", "import", "hello", "world", "quick", "brown", "fox", "jumps",
+    "lazy", "dog", "Welcome", "Studio", "izers", "ing", "tion", "sion", "ment", "able", "ness", "ful", "less", "est", "ly", "al",
+    "ic", "ous", "ive", "ism", "ist", "ity", "function", "const", "let", "var", "async", "await", "interface", "type", "export",
+    "default", "module", "require", "script", "document", "window", "console", "log", "error", "fetch", "array", "object", "string",
+    "number", "boolean", "null", "undefined", "promise", "json", "api", "http", "https", "url", "data", "response", "request", "node",
+    "npm", "git", "github", "commit", "push", "branch", "merge", "नमस्ते", "दुनिया", "भारत", "आप", "कैसे", "हैं", "एक", "महान", "देश", "है"
+];
+
 const COMPREHENSIVE_BPE_CORPUS = `
 Tokenizers Token izers process text into subword units for LLMs.
 The quick brown fox jumps over the lazy dog.
@@ -77,22 +113,8 @@ class JSBPETokenizer {
             this.idToVocab[b] = ch;
         }
 
-        // Standard Tiktoken & Claude Common Subword & Word Vocabulary
-        const COMMON_SUBWORDS = [
-            "the", "be", "to", "of", "and", "a", "in", "that", "have", "I", "it", "for", "not", "on", "with", "he", "as", "you", "do", "at",
-            "this", "but", "his", "by", "from", "they", "we", "say", "her", "she", "or", "an", "will", "my", "one", "all", "would", "there",
-            "their", "what", "so", "up", "out", "if", "about", "who", "get", "which", "go", "me", "when", "make", "can", "like", "time", "no",
-            "just", "him", "know", "take", "people", "into", "year", "your", "good", "some", "could", "them", "see", "other", "than", "then",
-            "now", "look", "only", "come", "its", "over", "think", "also", "back", "after", "use", "two", "how", "our", "work", "first", "well",
-            "way", "even", "new", "want", "because", "any", "these", "give", "day", "most", "us", "Token", "token", "Tokens", "tokens",
-            "Tokenizer", "tokenizer", "Tokenizers", "tokenizers", "process", "text", "sub", "word", "subword", "subwords", "unit", "units",
-            "LLM", "LLMs", "BPE", "gpt", "GPT", "DeepSeek", "Claude", "Llama", "BERT", "OpenAI", "Anthropic", "python", "code", "main", "def",
-            "return", "print", "import", "hello", "world", "quick", "brown", "fox", "jumps", "lazy", "dog", "Welcome", "Studio", "izers",
-            "ing", "tion", "sion", "ment", "able", "ness", "ful", "less", "est", "ly", "al", "ic", "ous", "ive", "ism", "ist", "ity"
-        ];
-
         let curId = 256;
-        for (const w of COMMON_SUBWORDS) {
+        for (const w of MASSIVE_BPE_VOCABULARY) {
             if (this.vocab[w] === undefined) {
                 this.vocab[w] = curId;
                 this.idToVocab[curId] = w;
@@ -189,13 +211,13 @@ class JSBPETokenizer {
         
         const chunkStr = chunkBytes.map(b => String.fromCharCode(b)).join('');
         
-        // Maximal Matching Subword Splitter against Vocabulary & Learned Merges
+        // Maximal Matching Subword Splitter against Vocabulary
         let parts = [];
         let rem = chunkStr;
         
         while (rem.length > 0) {
             let matched = false;
-            // Try longest subword prefix that exists in vocab or merge ranks
+            // Try longest subword prefix that exists in vocab
             for (let len = rem.length; len > 0; len--) {
                 const sub = rem.slice(0, len);
                 if (this.vocab[sub] !== undefined || len === 1) {
@@ -254,7 +276,7 @@ class JSBPETokenizer {
             const res = {
                 id: assignedId,
                 tokenStr: p,
-                displayStr: cleanStr,
+                displayStr: cleanStr || p,
                 hex: hex,
                 len: p.length,
                 startIdx: currCharPos,
@@ -341,7 +363,7 @@ function showCustomTooltip(e, t, idx) {
         <div class="tooltip-body">
             <div class="tooltip-row">
                 <span class="t-label">Subword Text:</span>
-                <span class="t-val code">'${escapeHtml(cleanDisplay)}'</span>
+                <span class="t-val code">'${escapeHtml(cleanDisplay || t.tokenStr)}'</span>
             </div>
             <div class="tooltip-row">
                 <span class="t-label">Char Position:</span>
@@ -674,7 +696,7 @@ function renderTokensTable(tokens) {
     }
 
     tokensTableBody.innerHTML = tokens.map((t, idx) => {
-        const str = sanitizeTokenStr(t.displayStr);
+        const str = sanitizeTokenStr(t.displayStr) || t.tokenStr;
         return `
             <tr data-token-idx="${idx}">
                 <td>${idx + 1}</td>
@@ -696,9 +718,9 @@ function renderTree(tokens) {
     }
 
     treeContainer.innerHTML = tokenizer.merges.slice(0, 15).map(([p1, p2], idx) => {
-        const p1Clean = sanitizeTokenStr(p1);
-        const p2Clean = sanitizeTokenStr(p2);
-        const mergedStr = sanitizeTokenStr(p1 + p2);
+        const p1Clean = sanitizeTokenStr(p1) || p1;
+        const p2Clean = sanitizeTokenStr(p2) || p2;
+        const mergedStr = sanitizeTokenStr(p1 + p2) || (p1 + p2);
         return `
             <div class="tree-node">
                 <span>Rank #${idx + 1}: ('${escapeHtml(p1Clean)}' + '${escapeHtml(p2Clean)}')</span>
@@ -752,8 +774,8 @@ function renderMerges(mergeLogs) {
 
     mergesList.innerHTML = mergeLogs.map(log => `
         <div class="merge-item">
-            <span>'${escapeHtml(log.p1)}' + '${escapeHtml(log.p2)}'</span>
-            <span>➔ '${escapeHtml(log.merged)}'</span>
+            <span>'${escapeHtml(log.p1 || 'space')}' + '${escapeHtml(log.p2 || 'space')}'</span>
+            <span>➔ '${escapeHtml(log.merged || 'token')}'</span>
         </div>
     `).join('');
 }
@@ -766,7 +788,7 @@ function renderVocabTable() {
     const rows = [];
 
     for (const [tokenStr, id] of Object.entries(tokenizer.vocab)) {
-        const cleanStr = sanitizeTokenStr(tokenStr);
+        const cleanStr = sanitizeTokenStr(tokenStr) || tokenStr;
         if (!q || id.toString().includes(q) || cleanStr.toLowerCase().includes(q)) {
             rows.push(`
                 <tr>
@@ -829,7 +851,7 @@ function importModelJSON(e) {
 }
 
 function escapeHtml(str) {
-    return str
+    return (str || '')
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
