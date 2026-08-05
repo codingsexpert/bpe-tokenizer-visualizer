@@ -19,7 +19,7 @@ function getTokenColor(idx) {
 
 // Official Regex Patterns matching OpenAI tiktoken & Anthropic Claude
 const REGEX_PATTERNS = {
-    gpt4o: /[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]*[\p{Ll}\p{Lm}\p{Lo}\p{M}]+(?i:'s|'t|'re|'ve|'m|'ll|'d)?|[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]+[\p{Ll}\p{Lm}\p{Lo}\p{M}]*(?i:'s|'t|'re|'ve|'m|'ll|'d)?|\p{N}{1,3}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+/gu,
+    gpt4o: /[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]*[\p{Ll}\p{Lm}\p{Lo}\p{M}]+(?i:'s|'t|'re|'ve|'m|'ll|'d)?|[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}] shelter+[\p{Ll}\p{Lm}\p{Lo}\p{M}]*(?i:'s|'t|'re|'ve|'m|'ll|'d)?|\p{N}{1,3}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+/gu,
     gpt4: /(?:'[sS]|'[tT]|'[rR][eE]|'[vV][eE]|'[mM]|'[lL][lL]|'[dD])| ?\p{L}+|\p{N}{1,3}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+/gu,
     deepseek: /[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]*[\p{Ll}\p{Lm}\p{Lo}\p{M}]+(?i:'s|'t|'re|'ve|'m|'ll|'d)?|[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]+[\p{Ll}\p{Lm}\p{Lo}\p{M}]*(?i:'s|'t|'re|'ve|'m|'ll|'d)?|\p{N}{1,3}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+/gu,
     claude: /[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]*[\p{Ll}\p{Lm}\p{Lo}\p{M}]+(?i:'s|'t|'re|'ve|'m|'ll|'d)?|[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]+[\p{Ll}\p{Lm}\p{Lo}\p{M}]*(?i:'s|'t|'re|'ve|'m|'ll|'d)?|\p{N}{1,3}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+/gu,
@@ -182,7 +182,7 @@ class JSBPETokenizer {
             parts.splice(bestIdx + 1, 1);
         }
 
-        // Subword Fallback: If unmerged character fragments remain, group them cleanly into subwords (max 4-5 chars per subword token)
+        // Subword Fallback: Group unmerged character fragments into clean subwords
         if (parts.length > 2) {
             const mergedSubwords = [];
             let curr = '';
@@ -214,11 +214,14 @@ class JSBPETokenizer {
                 assignedId = Math.abs(h) % 150000 + 256;
             }
 
+            // Clean string representation: Strip any unicode space markers ␣ or Ġ
+            const cleanStr = p.replace(/[␣Ġ_]/g, ' ');
+
             const charLen = p.length;
             const res = {
                 id: assignedId,
                 tokenStr: p,
-                displayStr: p,
+                displayStr: cleanStr,
                 hex: hex,
                 len: p.length,
                 startIdx: currCharPos,
@@ -405,7 +408,7 @@ function runTokenization() {
         if (heatmapBox) heatmapBox.innerHTML = `<span class="placeholder-text">Type text above to view compression heatmap...</span>`;
         if (sequenceDisplay) sequenceDisplay.innerText = `[ ]`;
     } else {
-        // Render Clean Natural Subword Tokens
+        // Render Clean Token Chips containing ONLY the Subword Text (No Number ID & No ␣ symbol)
         if (inlineTokenView) {
             inlineTokenView.innerHTML = tokens.map((t, idx) => {
                 const palette = getTokenColor(idx);
@@ -413,13 +416,12 @@ function runTokenization() {
                 return `
                     <span class="token-inline-span" data-token-idx="${idx}" style="background-color: ${palette.bg}; border-color: ${palette.border}; color: ${palette.text}" title="Token #${idx + 1}&#10;Token ID: ${t.id}&#10;Subword: '${str}'&#10;Char Pos: ${t.startIdx}..${t.endIdx}&#10;Hex: ${t.hex}">
                         <span style="white-space: pre;">${escapeHtml(str)}</span>
-                        <span class="token-inline-id">${t.id}</span>
                     </span>
                 `;
             }).join('');
         }
 
-        // Render Subword Cards in Inspector
+        // Render Inspector Subword Cards (ONLY Text, No Number ID)
         if (tokensBox) {
             tokensBox.innerHTML = tokens.map((t, idx) => {
                 const palette = getTokenColor(idx);
@@ -427,7 +429,6 @@ function runTokenization() {
                 return `
                     <div class="subword-badge" data-token-idx="${idx}" style="background-color: ${palette.bg}; border-color: ${palette.border}; color: ${palette.text}" title="Token ID: ${t.id} | Chars: ${t.startIdx}..${t.endIdx} | Bytes: ${t.hex}">
                         <span style="white-space: pre;">${escapeHtml(str)}</span>
-                        <span class="subword-id">${t.id}</span>
                     </div>
                 `;
             }).join('');
