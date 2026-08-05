@@ -214,8 +214,8 @@ class JSBPETokenizer {
                 assignedId = Math.abs(h) % 150000 + 256;
             }
 
-            // Absolutely NO ␣ or Ġ or _ replacement symbols
-            const cleanStr = p;
+            // Strip any leading/trailing space symbols (including ␣, Ġ,   or \u2581) so token chips show ONLY pure text names
+            const cleanStr = p.replace(/^[\s\u2581\u0120\u2423␣_]+|[\s\u2581\u0120\u2423␣_]+$/g, '').trim() || p;
 
             const charLen = p.length;
             const res = {
