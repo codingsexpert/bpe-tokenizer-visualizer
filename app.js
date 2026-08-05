@@ -17,30 +17,6 @@ function getTokenColor(idx) {
     return TOKEN_COLOR_PALETTE[idx % TOKEN_COLOR_PALETTE.length];
 }
 
-function getBytesToUnicode() {
-    const bs = [];
-    for (let i = ' '.charCodeAt(0); i <= '~'.charCodeAt(0); i++) bs.push(i);
-    for (let i = '¡'.charCodeAt(0); i <= '¬'.charCodeAt(0); i++) bs.push(i);
-    for (let i = '®'.charCodeAt(0); i <= 'ÿ'.charCodeAt(0); i++) bs.push(i);
-
-    const cs = [...bs];
-    let n = 0;
-    for (let b = 0; b < 256; b++) {
-        if (!bs.includes(b)) {
-            bs.push(b);
-            cs.push(256 + n);
-            n++;
-        }
-    }
-    const byteToUnicode = {};
-    for (let i = 0; i < bs.length; i++) {
-        byteToUnicode[bs[i]] = String.fromCharCode(cs[i]);
-    }
-    return { byteToUnicode };
-}
-
-const { byteToUnicode } = getBytesToUnicode();
-
 // Official Regex Patterns matching OpenAI tiktoken & Anthropic Claude
 const REGEX_PATTERNS = {
     gpt4o: /[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]*[\p{Ll}\p{Lm}\p{Lo}\p{M}]+(?i:'s|'t|'re|'ve|'m|'ll|'d)?|[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]+[\p{Ll}\p{Lm}\p{Lo}\p{M}]*(?i:'s|'t|'re|'ve|'m|'ll|'d)?|\p{N}{1,3}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+/gu,
@@ -154,11 +130,7 @@ class JSBPETokenizer {
             this.mergeRanks[p1 + '|' + p2] = iter;
             nextId++;
 
-            const p1Str = Array.from(p1).map(c => byteToUnicode[c.charCodeAt(0)] || c).join('');
-            const p2Str = Array.from(p2).map(c => byteToUnicode[c.charCodeAt(0)] || c).join('');
-            const mStr = Array.from(merged).map(c => byteToUnicode[c.charCodeAt(0)] || c).join('');
-
-            mergeLogs.push({ iter: iter + 1, p1: p1Str, p2: p2Str, merged: mStr, count: bestCount });
+            mergeLogs.push({ iter: iter + 1, p1: p1, p2: p2, merged: merged, count: bestCount });
 
             const newWordFreq = new Map();
             for (const [key, freq] of wordFreq.entries()) {
@@ -221,7 +193,6 @@ class JSBPETokenizer {
         return parts.map(p => {
             const rawBytes = Array.from(encoder.encode(p));
             const hex = rawBytes.map(b => b.toString(16).padStart(2, '0').toUpperCase()).join(' ');
-            const displayStr = Array.from(p).map(c => byteToUnicode[c.charCodeAt(0)] || c).join('');
             
             let assignedId = this.vocab[p];
             if (assignedId === undefined) {
@@ -236,9 +207,9 @@ class JSBPETokenizer {
             const res = {
                 id: assignedId,
                 tokenStr: p,
-                displayStr: displayStr,
+                displayStr: p, // Direct clean text representation without ␣ or Ġ symbols
                 hex: hex,
-                len: displayStr.length,
+                len: p.length,
                 startIdx: currCharPos,
                 endIdx: currCharPos + charLen
             };
@@ -289,15 +260,11 @@ class JSBPETokenizer {
     }
 
     decode(tokens) {
-        const bytes = [];
+        let str = '';
         for (const tok of tokens) {
-            const str = this.idToVocab[tok.id] || tok.tokenStr || '';
-            for (let i = 0; i < str.length; i++) {
-                bytes.push(str.charCodeAt(i));
-            }
+            str += this.idToVocab[tok.id] || tok.tokenStr || '';
         }
-        const decoder = new TextDecoder('utf-8', { fatal: false });
-        return decoder.decode(new Uint8Array(bytes));
+        return str;
     }
 }
 
@@ -406,11 +373,6 @@ function runTraining() {
     runTokenization();
 }
 
-function formatSubword(str) {
-    // Preserve natural spaces cleanly without ugly special symbol '␣'
-    return str;
-}
-
 function runTokenization() {
     const promptInput = el('prompt-input');
     if (!promptInput) return;
@@ -436,10 +398,10 @@ function runTokenization() {
         if (inlineTokenView) {
             inlineTokenView.innerHTML = tokens.map((t, idx) => {
                 const palette = getTokenColor(idx);
-                const formattedText = formatSubword(t.displayStr);
+                const str = t.displayStr;
                 return `
-                    <span class="token-inline-span" data-token-idx="${idx}" style="background-color: ${palette.bg}; border-color: ${palette.border}; color: ${palette.text}" title="Token #${idx + 1}&#10;Token ID: ${t.id}&#10;Subword: '${formattedText}'&#10;Char Pos: ${t.startIdx}..${t.endIdx}&#10;Hex: ${t.hex}">
-                        <span style="white-space: pre;">${escapeHtml(formattedText)}</span>
+                    <span class="token-inline-span" data-token-idx="${idx}" style="background-color: ${palette.bg}; border-color: ${palette.border}; color: ${palette.text}" title="Token #${idx + 1}&#10;Token ID: ${t.id}&#10;Subword: '${str}'&#10;Char Pos: ${t.startIdx}..${t.endIdx}&#10;Hex: ${t.hex}">
+                        <span style="white-space: pre;">${escapeHtml(str)}</span>
                         <span class="token-inline-id">${t.id}</span>
                     </span>
                 `;
@@ -450,10 +412,10 @@ function runTokenization() {
         if (tokensBox) {
             tokensBox.innerHTML = tokens.map((t, idx) => {
                 const palette = getTokenColor(idx);
-                const formattedText = formatSubword(t.displayStr);
+                const str = t.displayStr;
                 return `
                     <div class="subword-badge" data-token-idx="${idx}" style="background-color: ${palette.bg}; border-color: ${palette.border}; color: ${palette.text}" title="Token ID: ${t.id} | Chars: ${t.startIdx}..${t.endIdx} | Bytes: ${t.hex}">
-                        <span style="white-space: pre;">${escapeHtml(formattedText)}</span>
+                        <span style="white-space: pre;">${escapeHtml(str)}</span>
                         <span class="subword-id">${t.id}</span>
                     </div>
                 `;
@@ -466,10 +428,10 @@ function runTokenization() {
                 const isMerged = t.len > 1;
                 const bg = isMerged ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.12)';
                 const border = isMerged ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.25)';
-                const formattedText = formatSubword(t.displayStr);
+                const str = t.displayStr;
                 return `
                     <span class="heatmap-pill" style="background: ${bg}; border-color: ${border}">
-                        <span style="white-space: pre;">${escapeHtml(formattedText)}</span>
+                        <span style="white-space: pre;">${escapeHtml(str)}</span>
                     </span>
                 `;
             }).join('');
@@ -576,12 +538,12 @@ function renderTokensTable(tokens) {
     }
 
     tokensTableBody.innerHTML = tokens.map((t, idx) => {
-        const formattedText = formatSubword(t.displayStr);
+        const str = t.displayStr;
         return `
             <tr data-token-idx="${idx}">
                 <td>${idx + 1}</td>
                 <td><strong>${t.id}</strong></td>
-                <td><code style="font-family: var(--font-code); color: var(--accent-indigo); white-space: pre;">'${escapeHtml(formattedText)}'</code></td>
+                <td><code style="font-family: var(--font-code); color: var(--accent-indigo); white-space: pre;">'${escapeHtml(str)}'</code></td>
                 <td><code style="font-family: var(--font-code); color: var(--text-muted)">${t.hex}</code></td>
                 <td><code style="font-family: var(--font-code); font-size: 0.75rem;">${t.startIdx}..${t.endIdx}</code></td>
             </tr>
@@ -598,12 +560,10 @@ function renderTree(tokens) {
     }
 
     treeContainer.innerHTML = tokenizer.merges.slice(0, 15).map(([p1, p2], idx) => {
-        const p1Str = formatSubword(Array.from(p1).map(c => byteToUnicode[c.charCodeAt(0)] || c).join(''));
-        const p2Str = formatSubword(Array.from(p2).map(c => byteToUnicode[c.charCodeAt(0)] || c).join(''));
-        const mergedStr = p1Str + p2Str;
+        const mergedStr = p1 + p2;
         return `
             <div class="tree-node">
-                <span>Rank #${idx + 1}: ('<span style="white-space: pre;">${escapeHtml(p1Str)}</span>' + '<span style="white-space: pre;">${escapeHtml(p2Str)}</span>')</span>
+                <span>Rank #${idx + 1}: ('<span style="white-space: pre;">${escapeHtml(p1)}</span>' + '<span style="white-space: pre;">${escapeHtml(p2)}</span>')</span>
                 <strong style="color: var(--accent-indigo)">➔ '<span style="white-space: pre;">${escapeHtml(mergedStr)}</span>'</strong>
             </div>
         `;
@@ -668,12 +628,11 @@ function renderVocabTable() {
     const rows = [];
 
     for (const [tokenStr, id] of Object.entries(tokenizer.vocab)) {
-        const displayStr = formatSubword(Array.from(tokenStr).map(c => byteToUnicode[c.charCodeAt(0)] || c).join(''));
-        if (!q || id.toString().includes(q) || displayStr.toLowerCase().includes(q)) {
+        if (!q || id.toString().includes(q) || tokenStr.toLowerCase().includes(q)) {
             rows.push(`
                 <tr>
                     <td><strong>${id}</strong></td>
-                    <td><code style="white-space: pre;">'${escapeHtml(displayStr)}'</code></td>
+                    <td><code style="white-space: pre;">'${escapeHtml(tokenStr)}'</code></td>
                     <td><span class="vstat">${id < 256 ? 'Byte' : 'BPE Subword'}</span></td>
                 </tr>
             `);
