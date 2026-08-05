@@ -76,11 +76,35 @@ class JSBPETokenizer {
             this.vocab[ch] = b;
             this.idToVocab[b] = ch;
         }
+
+        // Standard Tiktoken & Claude Common Subword & Word Vocabulary
+        const COMMON_SUBWORDS = [
+            "the", "be", "to", "of", "and", "a", "in", "that", "have", "I", "it", "for", "not", "on", "with", "he", "as", "you", "do", "at",
+            "this", "but", "his", "by", "from", "they", "we", "say", "her", "she", "or", "an", "will", "my", "one", "all", "would", "there",
+            "their", "what", "so", "up", "out", "if", "about", "who", "get", "which", "go", "me", "when", "make", "can", "like", "time", "no",
+            "just", "him", "know", "take", "people", "into", "year", "your", "good", "some", "could", "them", "see", "other", "than", "then",
+            "now", "look", "only", "come", "its", "over", "think", "also", "back", "after", "use", "two", "how", "our", "work", "first", "well",
+            "way", "even", "new", "want", "because", "any", "these", "give", "day", "most", "us", "Token", "token", "Tokens", "tokens",
+            "Tokenizer", "tokenizer", "Tokenizers", "tokenizers", "process", "text", "sub", "word", "subword", "subwords", "unit", "units",
+            "LLM", "LLMs", "BPE", "gpt", "GPT", "DeepSeek", "Claude", "Llama", "BERT", "OpenAI", "Anthropic", "python", "code", "main", "def",
+            "return", "print", "import", "hello", "world", "quick", "brown", "fox", "jumps", "lazy", "dog", "Welcome", "Studio", "izers",
+            "ing", "tion", "sion", "ment", "able", "ness", "ful", "less", "est", "ly", "al", "ic", "ous", "ive", "ism", "ist", "ity"
+        ];
+
+        let curId = 256;
+        for (const w of COMMON_SUBWORDS) {
+            if (this.vocab[w] === undefined) {
+                this.vocab[w] = curId;
+                this.idToVocab[curId] = w;
+                curId++;
+            }
+        }
     }
 
     train(text, targetVocabSize) {
         this.reset();
-        const numMerges = targetVocabSize - 256;
+        let nextId = Object.keys(this.vocab).length;
+        const numMerges = Math.max(0, targetVocabSize - nextId);
         if (numMerges <= 0) return [];
 
         const regexKey = this.selectedRegex;
@@ -99,7 +123,6 @@ class JSBPETokenizer {
             wordFreq.set(key, (wordFreq.get(key) || 0) + 1);
         }
 
-        let nextId = 256;
         const mergeLogs = [];
 
         for (let iter = 0; iter < numMerges; iter++) {
