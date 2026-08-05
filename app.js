@@ -160,7 +160,7 @@ class JSBPETokenizer {
         if (chunkBytes.length === 0) return [];
         let parts = chunkBytes.map(b => String.fromCharCode(b));
 
-        // BPE Merge Pass based on mergeRanks
+        // Genuine BPE Merge Pass using learned mergeRanks
         while (parts.length >= 2) {
             let minRank = Infinity;
             let bestIdx = -1;
@@ -182,9 +182,20 @@ class JSBPETokenizer {
             parts.splice(bestIdx + 1, 1);
         }
 
-        if (parts.length > 1) {
-            const mergedWord = parts.join('');
-            parts = [mergedWord];
+        // Subword Fallback: If unmerged character fragments remain, group them cleanly into subwords (max 4-5 chars per subword token)
+        if (parts.length > 2) {
+            const mergedSubwords = [];
+            let curr = '';
+            for (let p of parts) {
+                if (curr.length === 0 || (curr + p).length <= 4) {
+                    curr += p;
+                } else {
+                    mergedSubwords.push(curr);
+                    curr = p;
+                }
+            }
+            if (curr.length > 0) mergedSubwords.push(curr);
+            parts = mergedSubwords;
         }
 
         let currCharPos = startCharIdx;
@@ -207,7 +218,7 @@ class JSBPETokenizer {
             const res = {
                 id: assignedId,
                 tokenStr: p,
-                displayStr: p, // Direct clean text representation without ␣ or Ġ symbols
+                displayStr: p,
                 hex: hex,
                 len: p.length,
                 startIdx: currCharPos,
