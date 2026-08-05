@@ -717,6 +717,26 @@ html, body {
     font-size: 0.85rem;
 }
 
+/* Custom Sleek Scrollbar Styling for Dynamic Containers */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(241, 245, 249, 0.6);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(124, 58, 237, 0.25);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-indigo);
+}
+
 /* Floating Glass Tooltip */
 .custom-glass-tooltip {
     position: fixed;
@@ -735,6 +755,7 @@ html, body {
     transform: scale(0.96) translateY(4px);
     transition: opacity 0.18s ease, transform 0.18s ease;
     min-width: 210px;
+    max-width: 90vw;
 }
 
 .custom-glass-tooltip.visible {
@@ -802,10 +823,15 @@ html, body {
     font-size: 0.72rem;
 }
 
-/* Responsive Grid Breakpoints */
-@media screen and (max-width: 1024px) {
+/* Comprehensive Responsive Grid Breakpoints */
+@media screen and (max-width: 1200px) {
     .panels-grid {
         grid-template-columns: 1fr;
+    }
+
+    .studio-canvas {
+        max-width: 100%;
+        padding: 1.5rem 1.25rem;
     }
 }
 
@@ -828,7 +854,7 @@ html, body {
     }
 
     .nav-center {
-        max-width: 170px;
+        max-width: 180px;
     }
 
     .engine-selector {
@@ -840,19 +866,82 @@ html, body {
     }
 
     .nav-btn {
-        padding: 0.35rem 0.6rem;
+        padding: 0.35rem 0.65rem;
+        font-size: 0.75rem;
     }
 
     .studio-canvas {
-        padding: 1.25rem 1rem;
+        padding: 1rem 0.85rem;
         gap: 1.25rem;
     }
 
     .studio-title {
-        font-size: 1.4rem;
+        font-size: 1.35rem;
+    }
+
+    .studio-subtitle {
+        font-size: 0.82rem;
+    }
+
+    .canvas-panel {
+        padding: 1rem;
+        border-radius: var(--radius-md);
+    }
+
+    .stats-strip {
+        width: 100%;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+        padding: 0.75rem;
+    }
+
+    .stat-divider {
+        display: none;
+    }
+
+    .token-stream-canvas {
+        padding: 0.85rem;
+        min-height: 90px;
+        max-height: 320px;
+    }
+
+    .token-inline-span {
+        padding: 0.28rem 0.65rem;
+        font-size: 0.85rem;
     }
 
     .analytics-row {
         grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .brand-name {
+        font-size: 0.9rem;
+    }
+
+    .nav-center {
+        max-width: 140px;
+    }
+
+    .nav-select {
+        font-size: 0.72rem;
+    }
+
+    .stats-strip {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .stat-num {
+        font-size: 1rem;
+    }
+
+    .stat-tag {
+        font-size: 0.68rem;
+    }
+
+    .analytics-row {
+        grid-template-columns: 1fr;
     }
 }
