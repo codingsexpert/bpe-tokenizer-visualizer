@@ -17,11 +17,11 @@ function getTokenColor(idx) {
     return TOKEN_COLOR_PALETTE[idx % TOKEN_COLOR_PALETTE.length];
 }
 
-// Global Sanitizer to strip any unicode space symbols (␣, Ġ,   or \u2581) from ALL views
+// Aggressive Sanitizer: Strips ALL leading/trailing/internal spaces, ␣, Ġ,   & unicode space markers
 function sanitizeTokenStr(str) {
     if (!str) return '';
-    const cleaned = str.replace(/[\u2581\u0120\u2423␣_]/g, '').trim();
-    return cleaned || str.trim() || str;
+    const cleaned = str.replace(/[\s\u2581\u0120\u2423␣_]+/g, '');
+    return cleaned || str;
 }
 
 // Official Regex Patterns matching OpenAI tiktoken & Anthropic Claude
@@ -479,7 +479,7 @@ function runTokenization() {
         if (heatmapBox) heatmapBox.innerHTML = `<span class="placeholder-text">Type text above to view compression heatmap...</span>`;
         if (sequenceDisplay) sequenceDisplay.innerText = `[ ]`;
     } else {
-        // Render Clean Token Chips (ONLY Pure Subword Text Name)
+        // Render Clean Token Chips (ONLY Pure Subword Text Name, NO Space Symbols)
         if (inlineTokenView) {
             inlineTokenView.innerHTML = tokens.map((t, idx) => {
                 const palette = getTokenColor(idx);
