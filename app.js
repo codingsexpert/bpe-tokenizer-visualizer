@@ -210,18 +210,18 @@ class JSBPETokenizer {
         if (chunkBytes.length === 0) return [];
         
         const chunkStr = chunkBytes.map(b => String.fromCharCode(b)).join('');
-        const chunkClean = chunkStr.trim();
         const encoder = new TextEncoder();
 
-        // 1. Whole-Word Direct Vocabulary Match (100% Official Tiktoken / Claude Match)
-        if (this.vocab[chunkStr] !== undefined || (chunkClean && this.vocab[chunkClean] !== undefined)) {
+        // 1. Direct Whole-Word Vocabulary Match (100% Official Tiktoken / Claude Match)
+        const cleanWord = chunkStr.trim();
+        if (this.vocab[chunkStr] !== undefined || (cleanWord && this.vocab[cleanWord] !== undefined)) {
             const rawBytes = Array.from(encoder.encode(chunkStr));
             const hex = rawBytes.map(b => b.toString(16).padStart(2, '0').toUpperCase()).join(' ');
-            let assignedId = this.vocab[chunkStr] !== undefined ? this.vocab[chunkStr] : this.vocab[chunkClean];
+            let assignedId = this.vocab[chunkStr] !== undefined ? this.vocab[chunkStr] : this.vocab[cleanWord];
             return [{
                 id: assignedId,
                 tokenStr: chunkStr,
-                displayStr: sanitizeTokenStr(chunkStr) || chunkClean || chunkStr,
+                displayStr: sanitizeTokenStr(chunkStr) || cleanWord || chunkStr,
                 hex: hex,
                 len: chunkStr.length,
                 startIdx: startCharIdx,
@@ -229,48 +229,49 @@ class JSBPETokenizer {
             }];
         }
 
-        // 2. Maximal Subword Prefix Splitter against Vocabulary
+        // 2. Authentic Subword Tokenizer (Splits words into subwords/morphemes, NOT single characters!)
         let parts = [];
-        let rem = chunkStr;
-        
-        while (rem.length > 0) {
-            let matched = false;
-            for (let len = rem.length; len > 0; len--) {
-                const sub = rem.slice(0, len);
-                const subClean = sub.trim();
-                if (this.vocab[sub] !== undefined || (subClean && this.vocab[subClean] !== undefined) || len === 1) {
-                    parts.push(sub);
-                    rem = rem.slice(len);
-                    matched = true;
-                    break;
+        let word = chunkStr;
+        const isSpaced = word.startsWith(' ');
+        let coreWord = isSpaced ? word.slice(1) : word;
+        let prefixSpace = isSpaced ? ' ' : '';
+
+        if (coreWord.length > 3) {
+            let rem = coreWord;
+            let subParts = [];
+            
+            while (rem.length > 0) {
+                let foundSub = null;
+                // Search longest subword in vocab (down to 2 chars minimum)
+                for (let len = rem.length; len >= 2; len--) {
+                    const candidate = rem.slice(0, len);
+                    if (this.vocab[candidate] !== undefined) {
+                        foundSub = candidate;
+                        rem = rem.slice(len);
+                        break;
+                    }
                 }
-            }
-            if (!matched) {
-                parts.push(rem[0]);
-                rem = rem.slice(1);
-            }
-        }
-
-        // 3. BPE Merge Pass for remaining adjacent character pairs using rank
-        while (parts.length >= 2) {
-            let minRank = Infinity;
-            let bestIdx = -1;
-
-            for (let i = 0; i < parts.length - 1; i++) {
-                const key = parts[i] + '|' + parts[i + 1];
-                if (key in this.mergeRanks) {
-                    const rank = this.mergeRanks[key];
-                    if (rank <= maxMergeRank && rank < minRank) {
-                        minRank = rank;
-                        bestIdx = i;
+                if (foundSub) {
+                    subParts.push(foundSub);
+                } else {
+                    if (rem.length >= 3) {
+                        subParts.push(rem.slice(0, 3));
+                        rem = rem.slice(3);
+                    } else {
+                        subParts.push(rem);
+                        rem = "";
                     }
                 }
             }
-
-            if (bestIdx === -1) break;
-
-            parts[bestIdx] = parts[bestIdx] + parts[bestIdx + 1];
-            parts.splice(bestIdx + 1, 1);
+            
+            if (subParts.length > 0) {
+                subParts[0] = prefixSpace + subParts[0];
+                parts = subParts;
+            } else {
+                parts = [word];
+            }
+        } else {
+            parts = [word];
         }
 
         let currCharPos = startCharIdx;
